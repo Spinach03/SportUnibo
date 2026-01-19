@@ -21,6 +21,8 @@ $utilizzoCampi = $dbh->getUtilizzoCampi();
 $utentiAttivi = $dbh->getUtentiAttivi();
 $utentiAttiviPrecedente = $dbh->getUtentiAttiviMeseScorso();
 $campiManutenzione = $dbh->getCampiManutenzione();
+$recensioniTotali = $dbh->getRecensioniTotali();
+$ratingMedio = $dbh->getRatingMedioGlobale();
 
 // Alerts
 $segnalazioniPending = $dbh->getSegnalazioniPending();
@@ -37,7 +39,7 @@ $utilizzoLista = $dbh->getUtilizzoCampiLista();
 $distribuzioneSport = $dbh->getDistribuzioneSport();
 
 // Attività recenti
-$attivitaRecenti = $dbh->getAttivitaRecenti(5);
+$attivitaRecenti = $dbh->getAttivitaRecenti(8);
 
 // Passa i dati al template
 $templateParams["titolo"] = "Campus Sports - Dashboard";
@@ -53,7 +55,9 @@ $templateParams["kpi"] = [
     "utilizzo_campi" => $utilizzoCampi,
     "utenti_attivi" => $utentiAttivi,
     "variazione_utenti" => $variazioneUtenti,
-    "campi_manutenzione" => $campiManutenzione
+    "campi_manutenzione" => $campiManutenzione,
+    "recensioni_totali" => $recensioniTotali,
+    "rating_medio" => $ratingMedio
 ];
 
 // Alerts

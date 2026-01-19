@@ -151,6 +151,20 @@ $dataItaliana = $giorni[date('w')] . ' ' . date('d') . ' ' . $mesi[date('n')] . 
             </div>
         </div>
     </div>
+    
+    <!-- Recensioni -->
+    <div class="col-xl col-md-4 col-6">
+        <div class="kpi-card" data-color="orange">
+            <div class="kpi-header">
+                <span class="kpi-icon">⭐</span>
+            </div>
+            <div class="kpi-value"><?php echo $templateParams["kpi"]["recensioni_totali"]; ?></div>
+            <div class="kpi-label">Recensioni (<?php echo $templateParams["kpi"]["rating_medio"]; ?>★)</div>
+            <div class="kpi-progress">
+                <div class="kpi-progress-bar bg-orange" style="width: <?php echo ($templateParams["kpi"]["rating_medio"] / 5) * 100; ?>%"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Charts Row -->
@@ -188,7 +202,7 @@ $dataItaliana = $giorni[date('w')] . ' ' . date('d') . ' ' . $mesi[date('n')] . 
                                     ($campo["percentuale"] > 50 ? 'bg-orange' : 'bg-blue'); 
                             ?>" style="width: <?php echo max(5, $campo["percentuale"]); ?>%"></div>
                         </div>
-                        <span class="usage-value"><?php echo $campo["percentuale"]; ?>%</span>
+                        <span class="usage-value"><?php echo $campo["prenotazioni"]; ?></span>
                     </div>
                     <?php endforeach; ?>
                 </div>
@@ -198,7 +212,7 @@ $dataItaliana = $giorni[date('w')] . ' ' . date('d') . ' ' . $mesi[date('n')] . 
 </div>
 
 <!-- Bottom Row -->
-<div class="row g-4">
+<div class="row g-4 align-items-start">
     <!-- Distribuzione Sport -->
     <div class="col-lg-3">
         <div class="dashboard-card">
@@ -236,7 +250,6 @@ $dataItaliana = $giorni[date('w')] . ' ' . date('d') . ' ' . $mesi[date('n')] . 
         <div class="dashboard-card">
             <div class="card-header-custom">
                 <h3><span class="card-icon">⏱️</span> Attività Recenti</h3>
-                <a href="#" class="card-link">Vedi tutte →</a>
             </div>
             <div class="card-body-custom">
                 <div class="activity-list">

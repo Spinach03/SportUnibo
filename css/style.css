@@ -1183,6 +1183,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    margin-right: -12px;
+    padding-right: 12px;
 }
 
 .usage-item {
@@ -1229,6 +1233,9 @@ body {
 
 .usage-bar.bg-green { background: linear-gradient(90deg, #059669, #10B981, #34D399); }
 .usage-bar.bg-orange { background: linear-gradient(90deg, #D97706, #F59E0B, #FBBF24); }
+.usage-bar.bg-blue { background: linear-gradient(90deg, #2563EB, #3B82F6, #60A5FA); }
+.usage-bar.bg-cyan { background: linear-gradient(90deg, #0891B2, #06B6D4, #22D3EE); }
+.usage-bar.bg-purple { background: linear-gradient(90deg, #7C3AED, #8B5CF6, #A78BFA); }
 .usage-bar.bg-red { background: linear-gradient(90deg, #DC2626, #EF4444, #F87171); }
 
 .usage-value {
@@ -1249,9 +1256,9 @@ body {
    ============================================================================ */
 .donut-container {
     position: relative;
-    width: 150px;
-    height: 150px;
-    margin: 0 auto 20px;
+    width: 130px;
+    height: 130px;
+    margin: 0 auto 16px;
 }
 
 .donut-center {
@@ -1264,14 +1271,14 @@ body {
 
 .donut-value {
     display: block;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1;
 }
 
 .donut-label {
-    font-size: 12px;
+    font-size: 10px;
     color: var(--text-muted);
     margin-top: 2px;
 }
@@ -1279,13 +1286,13 @@ body {
 .sport-legend {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
 }
 
 .sport-legend-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 6px 8px;
     margin: 0 -8px;
     border-radius: 8px;
@@ -1298,9 +1305,9 @@ body {
 }
 
 .sport-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 5px;
     flex-shrink: 0;
     transition: box-shadow var(--transition-fast);
 }
@@ -1311,7 +1318,7 @@ body {
 
 .sport-name {
     flex: 1;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
     text-align: left;
@@ -1323,7 +1330,7 @@ body {
 }
 
 .sport-percent {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-primary);
     transition: color var(--transition-fast);
@@ -1336,7 +1343,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 340px;
+    max-height: 355px;
     overflow-y: auto;
     margin-right: -12px;
     padding-right: 12px;
@@ -1441,8 +1448,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 20px 12px;
+    gap: 10px;
+    padding: 24px 16px;
     border: none;
     border-radius: 14px;
     cursor: pointer;
@@ -1486,7 +1493,7 @@ body {
 .bg-gradient-gray:hover { background: linear-gradient(135deg, #64748B, var(--bg-tertiary)); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 
 .qa-icon {
-    font-size: 28px;
+    font-size: 36px;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
@@ -1496,7 +1503,7 @@ body {
 }
 
 .qa-label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: white;
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);

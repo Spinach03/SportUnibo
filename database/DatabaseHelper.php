@@ -92,6 +92,20 @@ class DatabaseHelper {
         return $result->fetch_assoc()['totale'] ?? 0;
     }
     
+    // Recensioni totali
+    public function getRecensioniTotali() {
+        $query = "SELECT COUNT(*) as totale FROM recensioni";
+        $result = $this->db->query($query);
+        return $result->fetch_assoc()['totale'] ?? 0;
+    }
+    
+    // Rating medio globale
+    public function getRatingMedioGlobale() {
+        $query = "SELECT ROUND(AVG(rating_generale), 1) as media FROM recensioni";
+        $result = $this->db->query($query);
+        return $result->fetch_assoc()['media'] ?? 0;
+    }
+    
     // ============================================================================
     // DASHBOARD - Alerts
     // ============================================================================
@@ -143,25 +157,50 @@ class DatabaseHelper {
     }
     
     // ============================================================================
-    // DASHBOARD - Utilizzo Campi (Lista)
+    // DASHBOARD - Utilizzo Campi (Lista) - Numero prenotazioni totali per campo
     // ============================================================================
     
     public function getUtilizzoCampiLista() {
+        // Conta il numero totale di prenotazioni per ogni campo (da sempre)
         $query = "SELECT 
                     c.campo_id,
                     c.nome,
                     s.nome as sport,
-                    COUNT(p.prenotazione_id) as prenotazioni,
-                    ROUND((COUNT(p.prenotazione_id) / 20) * 100) as percentuale
+                    COUNT(CASE WHEN p.stato IN ('confermata', 'completata') THEN 1 END) as prenotazioni
                   FROM campi_sportivi c
                   JOIN sport s ON c.sport_id = s.sport_id
                   LEFT JOIN prenotazioni p ON c.campo_id = p.campo_id
                   WHERE c.stato != 'chiuso'
-                  GROUP BY c.campo_id
-                  ORDER BY prenotazioni DESC
-                  LIMIT 6";
+                  GROUP BY c.campo_id, c.nome, s.nome
+                  ORDER BY prenotazioni DESC";
         $result = $this->db->query($query);
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $data = $result->fetch_all(MYSQLI_ASSOC);
+        
+        // Trova il massimo per calcolare percentuali relative
+        $maxPren = 0;
+        foreach ($data as $row) {
+            if (intval($row['prenotazioni']) > $maxPren) {
+                $maxPren = intval($row['prenotazioni']);
+            }
+        }
+        
+        // Calcola percentuale relativa al campo più utilizzato
+        foreach ($data as &$row) {
+            $numPren = intval($row['prenotazioni']);
+            
+            if ($maxPren > 0) {
+                $row['percentuale'] = round(($numPren / $maxPren) * 100);
+            } else {
+                $row['percentuale'] = 0;
+            }
+            
+            // Minimo visibile 5% se ha almeno una prenotazione
+            if ($numPren > 0 && $row['percentuale'] < 5) {
+                $row['percentuale'] = 5;
+            }
+        }
+        
+        return $data;
     }
     
     // ============================================================================
