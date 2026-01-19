@@ -92,7 +92,7 @@
 
             <!-- User Profile -->
             <div class="sidebar-user">
-                <div class="user-avatar user-avatar-utente">
+                <div class="user-avatar">
                     <?php echo strtoupper(substr($_SESSION['nome'], 0, 1) . substr($_SESSION['cognome'], 0, 1)); ?>
                 </div>
                 <div class="user-info">
@@ -122,20 +122,31 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Sidebar Toggle Script -->
+    <!-- Sidebar Toggle Script con localStorage -->
     <script>
         const sidebar = document.getElementById('sidebar');
         const toggleBtn = document.getElementById('sidebarToggle');
         const toggleIcon = document.getElementById('toggleIcon');
         
+        // Carica stato salvato
+        if(localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+            toggleIcon.classList.remove('bi-chevron-left');
+            toggleIcon.classList.add('bi-chevron-right');
+        }
+        
+        // Toggle e salva stato
         toggleBtn.addEventListener('click', function() {
             sidebar.classList.toggle('collapsed');
+            
             if(sidebar.classList.contains('collapsed')) {
                 toggleIcon.classList.remove('bi-chevron-left');
                 toggleIcon.classList.add('bi-chevron-right');
+                localStorage.setItem('sidebarCollapsed', 'true');
             } else {
                 toggleIcon.classList.remove('bi-chevron-right');
                 toggleIcon.classList.add('bi-chevron-left');
+                localStorage.setItem('sidebarCollapsed', 'false');
             }
         });
     </script>
