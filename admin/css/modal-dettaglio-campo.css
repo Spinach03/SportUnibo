@@ -9,20 +9,26 @@
 /* Override per tutti i modal della pagina gestione campi */
 #modalDettaglioCampo,
 #modalBloccoManutenzione,
-#modalModificaCampo {
+#modalModificaCampo,
+#modalEliminaCampo,
+#modalChiudiCampo {
     z-index: 1060 !important;
 }
 
 #modalDettaglioCampo .modal-dialog,
 #modalBloccoManutenzione .modal-dialog,
-#modalModificaCampo .modal-dialog {
+#modalModificaCampo .modal-dialog,
+#modalEliminaCampo .modal-dialog,
+#modalChiudiCampo .modal-dialog {
     z-index: 1061 !important;
     pointer-events: auto !important;
 }
 
 #modalDettaglioCampo .modal-content,
 #modalBloccoManutenzione .modal-content,
-#modalModificaCampo .modal-content {
+#modalModificaCampo .modal-content,
+#modalEliminaCampo .modal-content,
+#modalChiudiCampo .modal-content {
     pointer-events: auto !important;
 }
 
@@ -42,10 +48,40 @@
 #modalModificaCampo select,
 #modalModificaCampo textarea,
 #modalModificaCampo button,
-#modalModificaCampo label {
+#modalModificaCampo label,
+#modalEliminaCampo input,
+#modalEliminaCampo button,
+#modalEliminaCampo label,
+#modalChiudiCampo button {
     pointer-events: auto !important;
     position: relative;
     z-index: 1;
+}
+
+/* ============================================================================
+   MODAL-DARK - STILE BASE PER TUTTI I MODAL SCURI
+   ============================================================================ */
+.modal-content.modal-dark {
+    background: linear-gradient(180deg, #1a2332 0%, #0f172a 100%) !important;
+    border: 1px solid rgba(148, 163, 184, 0.1) !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal-dark .modal-header {
+    background: rgba(30, 41, 59, 0.5);
+    padding: 16px 20px;
+}
+
+.modal-dark .modal-body {
+    padding: 20px;
+    color: #cbd5e1;
+}
+
+.modal-dark .modal-footer {
+    background: rgba(15, 23, 42, 0.5);
+    padding: 16px 20px;
 }
 
 /* ============================================================================

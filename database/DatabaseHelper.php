@@ -1416,6 +1416,35 @@ class DatabaseHelper {
     }
     
     // ============================================================================
+    // GESTIONE UTENTI - Sbanna utente (Rimuovi Ban)
+    // ============================================================================
+    
+    public function unbanUser($userId, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Riporta stato ad attivo
+            $query = "UPDATE users SET stato = 'attivo' WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            
+            // Disattiva la sanzione ban
+            $query2 = "UPDATE sanzioni SET attiva = 0, data_fine = NOW() 
+                       WHERE user_id = ? AND tipo = 'ban' AND attiva = 1";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('i', $userId);
+            $stmt2->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
     // GESTIONE UTENTI - Invia messaggio
     // ============================================================================
     

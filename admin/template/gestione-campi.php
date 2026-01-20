@@ -1097,6 +1097,70 @@ $recensioniRecenti = $templateParams["recensioni_recenti"] ?? [];
 </div>
 
 <!-- ============================================================================
+     MODAL: ELIMINA CAMPO
+     ============================================================================ -->
+<div class="modal fade" id="modalEliminaCampo" tabindex="-1" aria-hidden="true" style="z-index: 1060 !important;">
+    <div class="modal-dialog modal-dialog-centered" style="z-index: 1061 !important; pointer-events: auto !important;">
+        <div class="modal-content" style="background: linear-gradient(180deg, #1a2332 0%, #0f172a 100%); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 16px; pointer-events: auto !important;">
+            <div class="modal-header" style="background: rgba(30, 41, 59, 0.5); border-bottom: 1px solid rgba(239, 68, 68, 0.3); padding: 16px 20px;">
+                <h5 class="modal-title" style="color: #f1f5f9; font-weight: 600;">🗑️ Elimina Campo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+                    ⚠️ Attenzione: questa azione è irreversibile!
+                </div>
+                <p style="color: #cbd5e1; margin-bottom: 16px;">
+                    Stai per eliminare definitivamente il campo <strong id="eliminaCampoNome" style="color: #f1f5f9;">-</strong>.
+                </p>
+                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 16px;">
+                    Tutte le prenotazioni future verranno cancellate e i dati del campo saranno rimossi permanentemente.
+                </p>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="confermaEliminaCampo" required style="pointer-events: auto !important;">
+                    <label class="form-check-label" for="confermaEliminaCampo" style="color: #cbd5e1; pointer-events: auto !important;">
+                        Confermo di voler eliminare questo campo
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: rgba(15, 23, 42, 0.5); border-top: 1px solid rgba(148, 163, 184, 0.1); padding: 16px 20px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="pointer-events: auto !important;">Annulla</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmEliminaCampo" disabled style="pointer-events: auto !important;">🗑️ Elimina Campo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================
+     MODAL: CHIUDI/RIAPRI CAMPO
+     ============================================================================ -->
+<div class="modal fade" id="modalChiudiCampo" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered" style="z-index: 1061;">
+        <div class="modal-content" style="background: linear-gradient(180deg, #1a2332 0%, #0f172a 100%); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 16px; pointer-events: auto;">
+            <div class="modal-header" id="chiudiCampoHeader" style="background: rgba(30, 41, 59, 0.5); border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding: 16px 20px;">
+                <h5 class="modal-title" id="chiudiCampoTitle" style="color: #f1f5f9; font-weight: 600;">🚫 Chiudi Campo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="chiudiCampoAlert" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fcd34d; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+                    ⚠️ Il campo non sarà più prenotabile
+                </div>
+                <p style="color: #cbd5e1; margin-bottom: 16px;">
+                    Stai per <span id="chiudiCampoAzione">chiudere</span> il campo <strong id="chiudiCampoNome" style="color: #f1f5f9;">-</strong>.
+                </p>
+                <p id="chiudiCampoDesc" style="color: #94a3b8; font-size: 14px;">
+                    Le prenotazioni future per questo campo saranno bloccate. Potrai riaprire il campo in qualsiasi momento.
+                </p>
+            </div>
+            <div class="modal-footer" style="background: rgba(15, 23, 42, 0.5); border-top: 1px solid rgba(148, 163, 184, 0.1); padding: 16px 20px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="pointer-events: auto;">Annulla</button>
+                <button type="button" class="btn" id="btnConfirmChiudiCampo" style="background: #F59E0B; color: #1e293b; font-weight: 600; pointer-events: auto;">🚫 Chiudi Campo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================
      TOAST NOTIFICATIONS
      ============================================================================ -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
@@ -1115,6 +1179,18 @@ $recensioniRecenti = $templateParams["recensioni_recenti"] ?? [];
      ============================================================================ -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // ============================================================================
+    // FIX MODAL - Sposta i modal nel body SUBITO per evitare problemi di z-index
+    // Deve essere la prima cosa eseguita!
+    // ============================================================================
+    const modalsToMove = ['modalNuovoCampo', 'modalDettaglioCampo', 'modalBloccoManutenzione', 'modalModificaCampo', 'modalEliminaCampo', 'modalChiudiCampo'];
+    modalsToMove.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+    });
     
     // ============================================================================
     // VARIABILI GLOBALI
@@ -1760,15 +1836,43 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // ============================================================================
-    // ELIMINA CAMPO
+    // ELIMINA CAMPO - Apre modal conferma
     // ============================================================================
     document.getElementById('btnEliminaCampo').addEventListener('click', function() {
         if (!currentCampoId) return;
         
-        if (!confirm('Sei sicuro di voler eliminare questo campo? L\'operazione non può essere annullata.')) {
-            return;
-        }
+        // Imposta il nome del campo nel modal
+        const nomeCampo = document.getElementById('detailNome').textContent;
+        document.getElementById('eliminaCampoNome').textContent = nomeCampo;
         
+        // Reset checkbox
+        document.getElementById('confermaEliminaCampo').checked = false;
+        document.getElementById('btnConfirmEliminaCampo').disabled = true;
+        
+        // Chiudi modal dettaglio
+        const modalDettaglio = bootstrap.Modal.getInstance(document.getElementById('modalDettaglioCampo'));
+        if (modalDettaglio) modalDettaglio.hide();
+        
+        // Aspetta che il modal si chiuda e rimuovi backdrop residui
+        setTimeout(() => {
+            // Rimuovi tutti i backdrop residui
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Apri il nuovo modal
+            new bootstrap.Modal(document.getElementById('modalEliminaCampo')).show();
+        }, 350);
+    });
+    
+    // Checkbox abilita/disabilita bottone elimina
+    document.getElementById('confermaEliminaCampo').addEventListener('change', function() {
+        document.getElementById('btnConfirmEliminaCampo').disabled = !this.checked;
+    });
+    
+    // Conferma eliminazione
+    document.getElementById('btnConfirmEliminaCampo').addEventListener('click', function() {
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('campo_id', currentCampoId);
@@ -1783,7 +1887,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 showToast(data.message, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('modalDettaglioCampo')).hide();
+                bootstrap.Modal.getInstance(document.getElementById('modalEliminaCampo')).hide();
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showToast(data.message || 'Errore nell\'eliminazione', 'error');
@@ -1796,7 +1900,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // ============================================================================
-    // CHIUDI/RIAPRI CAMPO
+    // CHIUDI/RIAPRI CAMPO - Apre modal conferma
     // ============================================================================
     document.getElementById('btnChiudiCampo').addEventListener('click', function() {
         if (!currentCampoId) return;
@@ -1804,13 +1908,67 @@ document.addEventListener('DOMContentLoaded', function() {
         // Controlla lo stato attuale del campo
         const statusText = document.querySelector('#detailStatus .status-text-modal').textContent;
         const isChiuso = statusText === 'Chiuso';
+        const nomeCampo = document.getElementById('detailNome').textContent;
         
-        const azione = isChiuso ? 'riaprire' : 'chiudere';
-        const nuovoStato = isChiuso ? 'disponibile' : 'chiuso';
+        // Aggiorna il modal in base all'azione
+        const modalTitle = document.getElementById('chiudiCampoTitle');
+        const modalAlert = document.getElementById('chiudiCampoAlert');
+        const modalAzione = document.getElementById('chiudiCampoAzione');
+        const modalNome = document.getElementById('chiudiCampoNome');
+        const modalDesc = document.getElementById('chiudiCampoDesc');
+        const modalHeader = document.getElementById('chiudiCampoHeader');
+        const btnConfirm = document.getElementById('btnConfirmChiudiCampo');
         
-        if (!confirm(`Sei sicuro di voler ${azione} questo campo?`)) {
-            return;
+        modalNome.textContent = nomeCampo;
+        
+        if (isChiuso) {
+            // Riapri campo
+            modalTitle.innerHTML = '✅ Riapri Campo';
+            modalAlert.innerHTML = '✅ Il campo tornerà disponibile per le prenotazioni';
+            modalAlert.style.background = 'rgba(16, 185, 129, 0.15)';
+            modalAlert.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            modalAlert.style.color = '#6ee7b7';
+            modalHeader.style.borderBottomColor = 'rgba(16, 185, 129, 0.3)';
+            modalAzione.textContent = 'riaprire';
+            modalDesc.textContent = 'Il campo sarà nuovamente prenotabile dagli utenti.';
+            btnConfirm.innerHTML = '✅ Riapri Campo';
+            btnConfirm.style.background = '#10B981';
+            btnConfirm.dataset.nuovoStato = 'disponibile';
+        } else {
+            // Chiudi campo
+            modalTitle.innerHTML = '🚫 Chiudi Campo';
+            modalAlert.innerHTML = '⚠️ Il campo non sarà più prenotabile';
+            modalAlert.style.background = 'rgba(245, 158, 11, 0.15)';
+            modalAlert.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+            modalAlert.style.color = '#fcd34d';
+            modalHeader.style.borderBottomColor = 'rgba(245, 158, 11, 0.3)';
+            modalAzione.textContent = 'chiudere';
+            modalDesc.textContent = 'Le prenotazioni future per questo campo saranno bloccate. Potrai riaprire il campo in qualsiasi momento.';
+            btnConfirm.innerHTML = '🚫 Chiudi Campo';
+            btnConfirm.style.background = '#F59E0B';
+            btnConfirm.dataset.nuovoStato = 'chiuso';
         }
+        
+        // Chiudi modal dettaglio
+        const modalDettaglio = bootstrap.Modal.getInstance(document.getElementById('modalDettaglioCampo'));
+        if (modalDettaglio) modalDettaglio.hide();
+        
+        // Aspetta che il modal si chiuda e rimuovi backdrop residui
+        setTimeout(() => {
+            // Rimuovi tutti i backdrop residui
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Apri il nuovo modal
+            new bootstrap.Modal(document.getElementById('modalChiudiCampo')).show();
+        }, 350);
+    });
+    
+    // Conferma chiudi/riapri
+    document.getElementById('btnConfirmChiudiCampo').addEventListener('click', function() {
+        const nuovoStato = this.dataset.nuovoStato;
         
         const formData = new FormData();
         formData.append('action', 'update_stato');
@@ -1826,8 +1984,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showToast(data.message || `Campo ${isChiuso ? 'riaperto' : 'chiuso'} con successo`, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('modalDettaglioCampo')).hide();
+                showToast(data.message || `Campo ${nuovoStato === 'disponibile' ? 'riaperto' : 'chiuso'} con successo`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalChiudiCampo')).hide();
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showToast(data.message || 'Errore nell\'operazione', 'error');
@@ -2041,17 +2199,6 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.disabled = false;
             btn.innerHTML = originalContent;
         });
-    });
-    
-    // ============================================================================
-    // FIX MODAL - Sposta i modal nel body per evitare problemi di z-index
-    // ============================================================================
-    const modalsToMove = ['modalNuovoCampo', 'modalDettaglioCampo', 'modalBloccoManutenzione', 'modalModificaCampo'];
-    modalsToMove.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (modal && modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
-        }
     });
     
 });

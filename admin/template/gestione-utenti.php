@@ -1,9 +1,8 @@
-<?php
-/**
- * GESTIONE UTENTI - Template
- * Campus Sports Arena - Admin Panel
- */
+<!-- ============================================================================
+     GESTIONE UTENTI - Campus Sports Arena Admin
+     ============================================================================ -->
 
+<?php
 // Helper per colori ruolo
 function getRoleConfig($ruolo) {
     $config = [
@@ -36,440 +35,340 @@ function getInitials($nome, $cognome) {
     return strtoupper(substr($nome, 0, 1) . substr($cognome, 0, 1));
 }
 
-include 'header.php';
+// Estrai variabili da templateParams
+$statsGenerali = $templateParams["statsGenerali"] ?? ['totale' => 0, 'attivi' => 0, 'sospesi' => 0, 'bannati' => 0];
+$users = $templateParams["users"] ?? [];
+$corsi = $templateParams["corsi"] ?? [];
+$filtri = $templateParams["filtri"] ?? ['ruolo' => '', 'stato' => '', 'corso' => '', 'penalty_min' => '', 'search' => '', 'ordina' => 'nome'];
 ?>
 
-<!-- CSS Specifico -->
-<link rel="stylesheet" href="css/gestione-utenti.css">
-<link rel="stylesheet" href="css/modal-nuovo-campo.css">
-
-<div class="admin-page gestione-utenti-page">
+<!-- Header Gestione Utenti - Tutto in linea -->
+<div class="gestione-header">
+    <span class="header-icon">👥</span>
+    <p class="page-subtitle">Monitora, gestisci e modera gli utenti della piattaforma</p>
     
-    <!-- ============================================================================
-         HEADER SEZIONE
-         ============================================================================ -->
-    <div class="gestione-header">
-        <span class="header-icon">👥</span>
-        <div class="header-text">
-            <h1 class="page-title mb-0"><?php echo $pageTitle; ?></h1>
-            <p class="page-subtitle"><?php echo $pageSubtitle; ?></p>
-        </div>
-        
-        <!-- Stats Cards Mini -->
-        <div class="header-stats">
-            <div class="stat-mini">
-                <span class="stat-mini-value"><?php echo $statsGenerali['totale'] ?? 0; ?></span>
-                <span class="stat-mini-label">Totale</span>
+    <!-- Search -->
+    <div class="search-box" id="searchContainer">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchUtenti" placeholder="Cerca utenti..." value="<?php echo htmlspecialchars($filtri['search']); ?>">
+    </div>
+</div>
+
+<!-- ============================================================================
+     QUICK STATS - KPI Cards
+     ============================================================================ -->
+<div class="row g-3 mb-4">
+    <!-- Utenti Totali -->
+    <div class="col-xl-3 col-md-6 col-6">
+        <div class="kpi-card" data-color="blue">
+            <div class="kpi-icon-wrapper">
+                <span class="kpi-icon">👥</span>
             </div>
-            <div class="stat-mini">
-                <span class="stat-mini-value text-success"><?php echo $statsGenerali['attivi'] ?? 0; ?></span>
-                <span class="stat-mini-label">Attivi</span>
-            </div>
-            <div class="stat-mini">
-                <span class="stat-mini-value text-warning"><?php echo $statsGenerali['sospesi'] ?? 0; ?></span>
-                <span class="stat-mini-label">Sospesi</span>
-            </div>
-            <div class="stat-mini">
-                <span class="stat-mini-value text-danger"><?php echo $statsGenerali['bannati'] ?? 0; ?></span>
-                <span class="stat-mini-label">Bannati</span>
-            </div>
+            <div class="kpi-value"><?php echo $statsGenerali['totale'] ?? 0; ?></div>
+            <div class="kpi-label">Utenti Totali</div>
         </div>
     </div>
     
-    <!-- ============================================================================
-         FILTRI E RICERCA
-         ============================================================================ -->
-    <div class="filters-section">
-        <form method="GET" class="filters-form" id="filtersForm">
-            <!-- Ricerca -->
-            <div class="filter-search">
-                <span class="search-icon">🔍</span>
-                <input type="text" name="search" class="filter-input-search" 
-                       placeholder="Cerca per nome o email..." 
-                       value="<?php echo htmlspecialchars($filtri['search']); ?>">
+    <!-- Attivi -->
+    <div class="col-xl-3 col-md-6 col-6">
+        <div class="kpi-card" data-color="green">
+            <div class="kpi-icon-wrapper">
+                <span class="kpi-icon">✅</span>
             </div>
-            
-            <!-- Filtro Ruolo -->
-            <div class="filter-group">
-                <select name="ruolo" class="filter-select" onchange="this.form.submit()">
-                    <option value="">Tutti i ruoli</option>
-                    <option value="user" <?php echo $filtri['ruolo'] === 'user' ? 'selected' : ''; ?>>👤 Utente</option>
-                    <option value="admin" <?php echo $filtri['ruolo'] === 'admin' ? 'selected' : ''; ?>>👑 Admin</option>
-                </select>
+            <div class="kpi-value"><?php echo $statsGenerali['attivi'] ?? 0; ?></div>
+            <div class="kpi-label">Attivi</div>
+        </div>
+    </div>
+    
+    <!-- Sospesi -->
+    <div class="col-xl-3 col-md-6 col-6">
+        <div class="kpi-card" data-color="orange">
+            <div class="kpi-icon-wrapper">
+                <span class="kpi-icon">⏸️</span>
             </div>
-            
-            <!-- Filtro Stato -->
-            <div class="filter-group">
-                <select name="stato" class="filter-select" onchange="this.form.submit()">
-                    <option value="">Tutti gli stati</option>
-                    <option value="attivo" <?php echo $filtri['stato'] === 'attivo' ? 'selected' : ''; ?>>🟢 Attivo</option>
-                    <option value="sospeso" <?php echo $filtri['stato'] === 'sospeso' ? 'selected' : ''; ?>>🟡 Sospeso</option>
-                    <option value="bannato" <?php echo $filtri['stato'] === 'bannato' ? 'selected' : ''; ?>>🔴 Bannato</option>
-                </select>
+            <div class="kpi-value"><?php echo $statsGenerali['sospesi'] ?? 0; ?></div>
+            <div class="kpi-label">Sospesi</div>
+        </div>
+    </div>
+    
+    <!-- Bannati -->
+    <div class="col-xl-3 col-md-6 col-6">
+        <div class="kpi-card" data-color="red">
+            <div class="kpi-icon-wrapper">
+                <span class="kpi-icon">🚫</span>
             </div>
-            
+            <div class="kpi-value"><?php echo $statsGenerali['bannati'] ?? 0; ?></div>
+            <div class="kpi-label">Bannati</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================
+     FILTRI CARD
+     ============================================================================ -->
+<div class="filters-card mb-4">
+    <form id="formFiltri" method="GET">
+        <!-- Riga 1: Ruolo -->
+        <div class="filter-row">
+            <span class="filter-label">Ruolo:</span>
+            <div class="filter-chips">
+                <button type="button" class="filter-chip <?php echo empty($filtri['ruolo']) ? 'active' : ''; ?>" data-filter="ruolo" data-value="">
+                    Tutti
+                </button>
+                <button type="button" class="filter-chip <?php echo $filtri['ruolo'] === 'user' ? 'active' : ''; ?>" data-filter="ruolo" data-value="user">
+                    👤 Utente
+                </button>
+                <button type="button" class="filter-chip <?php echo $filtri['ruolo'] === 'admin' ? 'active' : ''; ?>" data-filter="ruolo" data-value="admin">
+                    👑 Admin
+                </button>
+            </div>
+        </div>
+        
+        <!-- Riga 2: Stato -->
+        <div class="filter-row">
+            <span class="filter-label">Stato:</span>
+            <div class="filter-chips">
+                <button type="button" class="filter-chip <?php echo empty($filtri['stato']) ? 'active' : ''; ?>" data-filter="stato" data-value="">
+                    Tutti
+                </button>
+                <button type="button" class="filter-chip <?php echo $filtri['stato'] === 'attivo' ? 'active' : ''; ?>" data-filter="stato" data-value="attivo">
+                    <span class="status-dot green"></span> Attivo
+                </button>
+                <button type="button" class="filter-chip <?php echo $filtri['stato'] === 'sospeso' ? 'active' : ''; ?>" data-filter="stato" data-value="sospeso">
+                    <span class="status-dot orange"></span> Sospeso
+                </button>
+                <button type="button" class="filter-chip <?php echo $filtri['stato'] === 'bannato' ? 'active' : ''; ?>" data-filter="stato" data-value="bannato">
+                    <span class="status-dot red"></span> Bannato
+                </button>
+            </div>
+        </div>
+        
+        <!-- Riga 3: Selects -->
+        <div class="filter-row">
             <!-- Filtro Corso -->
-            <div class="filter-group">
-                <select name="corso" class="filter-select" onchange="this.form.submit()">
-                    <option value="">Tutti i corsi</option>
-                    <?php foreach ($corsi as $corso): ?>
-                    <option value="<?php echo $corso['corso_id']; ?>" <?php echo $filtri['corso'] == $corso['corso_id'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($corso['nome']); ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <!-- Filtro Penalty -->
-            <div class="filter-group">
-                <select name="penalty_min" class="filter-select" onchange="this.form.submit()">
-                    <option value="">Tutti i penalty</option>
-                    <option value="1" <?php echo $filtri['penalty_min'] === '1' ? 'selected' : ''; ?>>⚠️ Con penalty (≥1)</option>
-                    <option value="3" <?php echo $filtri['penalty_min'] === '3' ? 'selected' : ''; ?>>⚠️ Medio (≥3)</option>
-                    <option value="5" <?php echo $filtri['penalty_min'] === '5' ? 'selected' : ''; ?>>🔴 Alto (≥5)</option>
-                </select>
-            </div>
+            <select name="corso" id="selectCorso" class="sort-select">
+                <option value="">Tutti i corsi</option>
+                <?php foreach ($corsi as $corso): ?>
+                <option value="<?php echo $corso['corso_id']; ?>" <?php echo $filtri['corso'] == $corso['corso_id'] ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($corso['nome']); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
             
             <!-- Ordinamento -->
-            <div class="filter-group">
-                <select name="ordina" class="filter-select" onchange="this.form.submit()">
-                    <option value="nome" <?php echo $filtri['ordina'] === 'nome' ? 'selected' : ''; ?>>Nome A-Z</option>
-                    <option value="recente" <?php echo $filtri['ordina'] === 'recente' ? 'selected' : ''; ?>>Più recenti</option>
-                    <option value="attivita" <?php echo $filtri['ordina'] === 'attivita' ? 'selected' : ''; ?>>Più attivi</option>
-                    <option value="penalty" <?php echo $filtri['ordina'] === 'penalty' ? 'selected' : ''; ?>>Più penalty</option>
-                </select>
+            <select name="ordina" id="selectOrdina" class="sort-select">
+                <option value="nome" <?php echo $filtri['ordina'] === 'nome' ? 'selected' : ''; ?>>Nome A-Z</option>
+                <option value="recente" <?php echo $filtri['ordina'] === 'recente' ? 'selected' : ''; ?>>Più recenti</option>
+                <option value="attivita" <?php echo $filtri['ordina'] === 'attivita' ? 'selected' : ''; ?>>Più attivi</option>
+                <option value="penalty" <?php echo $filtri['ordina'] === 'penalty' ? 'selected' : ''; ?>>Più penalty</option>
+            </select>
+        </div>
+        
+        <!-- Hidden fields -->
+        <input type="hidden" name="ruolo" id="hiddenRuolo" value="<?php echo htmlspecialchars($filtri['ruolo']); ?>">
+        <input type="hidden" name="stato" id="hiddenStato" value="<?php echo htmlspecialchars($filtri['stato']); ?>">
+        <input type="hidden" name="search" id="hiddenSearch" value="<?php echo htmlspecialchars($filtri['search']); ?>">
+    </form>
+</div>
+
+<!-- ============================================================================
+     GRIGLIA UTENTI
+     ============================================================================ -->
+<div class="users-grid">
+    <?php if (empty($users)): ?>
+    <div class="no-results">
+        <div class="no-results-icon">😕</div>
+        <h3>Nessun utente trovato</h3>
+        <p>Prova a modificare i filtri di ricerca</p>
+    </div>
+    <?php else: ?>
+    
+    <?php foreach ($users as $user): 
+        $role = getRoleConfig($user['ruolo']);
+        $status = getStatusConfig($user['stato']);
+        $penalty = getPenaltyLevel($user['penalty_points'] ?? 0);
+        $initials = getInitials($user['nome'], $user['cognome']);
+        
+        // Calcolo affidabilità
+        $affidabilita = 100 - (($user['penalty_points'] ?? 0) * 5) - (($user['no_show_count'] ?? 0) * 3);
+        $affidabilita = max(0, min(100, $affidabilita));
+        
+        // Gli admin non sono cliccabili
+        $isAdmin = ($user['ruolo'] === 'admin');
+    ?>
+    <div class="user-card <?php echo $isAdmin ? 'admin-card' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>" data-ruolo="<?php echo $user['ruolo']; ?>">
+        <!-- Header Card -->
+        <div class="user-card-header">
+            <!-- Status Badge -->
+            <div class="user-status <?php echo $status['class']; ?>">
+                <span class="status-indicator"></span>
+                <span class="status-text"><?php echo $status['label']; ?></span>
             </div>
             
-            <!-- Reset -->
-            <?php if (!empty(array_filter($filtri))): ?>
-            <a href="gestione-utenti.php" class="btn-reset-filters">✕ Reset</a>
-            <?php endif; ?>
-        </form>
-    </div>
-    
-    <!-- ============================================================================
-         GRIGLIA UTENTI
-         ============================================================================ -->
-    <div class="users-grid">
-        <?php if (empty($users)): ?>
-        <div class="no-results">
-            <div class="no-results-icon">😕</div>
-            <h3>Nessun utente trovato</h3>
-            <p>Prova a modificare i filtri di ricerca</p>
-        </div>
-        <?php else: ?>
-        
-        <?php foreach ($users as $user): 
-            $role = getRoleConfig($user['ruolo']);
-            $status = getStatusConfig($user['stato']);
-            $penalty = getPenaltyLevel($user['penalty_points'] ?? 0);
-            $initials = getInitials($user['nome'], $user['cognome']);
-            
-            // Calcolo affidabilità (simulato)
-            $affidabilita = 100 - (($user['penalty_points'] ?? 0) * 5) - (($user['no_show_count'] ?? 0) * 3);
-            $affidabilita = max(0, min(100, $affidabilita));
-        ?>
-        <div class="user-card" data-user-id="<?php echo $user['user_id']; ?>" data-ruolo="<?php echo $user['ruolo']; ?>">
-            <!-- Header Card -->
-            <div class="user-card-header">
-                <!-- Status Badge -->
-                <div class="user-status <?php echo $status['class']; ?>">
-                    <span class="status-indicator"></span>
-                    <span class="status-text"><?php echo $status['label']; ?></span>
-                </div>
-                
-                <!-- Avatar -->
-                <div class="user-avatar" style="background: linear-gradient(135deg, <?php echo $role['color']; ?>, <?php echo $role['color']; ?>88);">
-                    <?php echo $initials; ?>
-                    <?php if ($user['ruolo'] === 'admin'): ?>
-                    <span class="admin-badge">👑</span>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- Nome -->
-                <h3 class="user-name"><?php echo htmlspecialchars($user['nome'] . ' ' . $user['cognome']); ?></h3>
-                
-                <!-- Email -->
-                <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
-                
-                <!-- Corso -->
-                <?php if (!empty($user['corso_nome'])): ?>
-                <div class="user-corso">🎓 <?php echo htmlspecialchars($user['corso_nome']); ?></div>
+            <!-- Avatar -->
+            <div class="user-avatar" style="background: linear-gradient(135deg, <?php echo $role['color']; ?>, <?php echo $role['color']; ?>88);">
+                <?php echo $initials; ?>
+                <?php if ($user['ruolo'] === 'admin'): ?>
+                <span class="admin-badge">👑</span>
                 <?php endif; ?>
             </div>
             
-            <!-- Body Card -->
-            <div class="user-card-body">
-                <!-- Stats Row -->
-                <div class="user-stats-row">
-                    <div class="user-stat">
-                        <span class="stat-value"><?php echo $user['totale_prenotazioni'] ?? 0; ?></span>
-                        <span class="stat-label">prenotazioni</span>
-                    </div>
-                    <div class="user-stat">
-                        <span class="stat-value" style="color: <?php echo $penalty['color']; ?>"><?php echo $user['penalty_points'] ?? 0; ?></span>
-                        <span class="stat-label">penalty</span>
-                    </div>
-                    <div class="user-stat">
-                        <span class="stat-value highlight"><?php echo $affidabilita; ?>%</span>
-                        <span class="stat-label">affidabilità</span>
-                    </div>
+            <!-- Nome -->
+            <h3 class="user-name"><?php echo htmlspecialchars($user['nome'] . ' ' . $user['cognome']); ?></h3>
+            
+            <!-- Email -->
+            <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
+            
+            <!-- Corso -->
+            <?php if (!empty($user['corso_nome'])): ?>
+            <div class="user-corso">🎓 <?php echo htmlspecialchars($user['corso_nome']); ?></div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- Body Card -->
+        <div class="user-card-body">
+            <!-- Stats Row -->
+            <div class="user-stats-row">
+                <div class="user-stat">
+                    <span class="stat-value"><?php echo $user['totale_prenotazioni'] ?? 0; ?></span>
+                    <span class="stat-label">prenotazioni</span>
                 </div>
-                
-                <!-- Progress Bar Affidabilità -->
-                <div class="user-progress-wrapper">
-                    <div class="user-progress-bar" style="width: <?php echo $affidabilita; ?>%; background: <?php 
-                        echo $affidabilita >= 80 ? '#10B981' : ($affidabilita >= 50 ? '#F59E0B' : '#EF4444'); 
-                    ?>"></div>
+                <div class="user-stat">
+                    <span class="stat-value" style="color: <?php echo $penalty['color']; ?>"><?php echo $user['penalty_points'] ?? 0; ?></span>
+                    <span class="stat-label">penalty</span>
                 </div>
-                
-                <!-- Info Row -->
-                <div class="user-info-row">
-                    <span class="user-info-item">
-                        <span class="info-icon"><?php echo $role['icon']; ?></span>
-                        <?php echo $role['label']; ?>
-                    </span>
-                    <?php if (!empty($user['ultimo_accesso'])): ?>
-                    <span class="user-info-item">
-                        <span class="info-icon">🕐</span>
-                        <?php echo date('d/m/Y', strtotime($user['ultimo_accesso'])); ?>
-                    </span>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- XP e Livello -->
-                <div class="user-xp-row">
-                    <span class="xp-badge">⭐ <?php echo $user['xp_points'] ?? 0; ?> XP</span>
-                    <?php if (!empty($user['livello_nome'])): ?>
-                    <span class="level-badge">🏅 <?php echo htmlspecialchars($user['livello_nome']); ?></span>
-                    <?php endif; ?>
+                <div class="user-stat">
+                    <span class="stat-value highlight"><?php echo $affidabilita; ?>%</span>
+                    <span class="stat-label">affidabilità</span>
                 </div>
             </div>
+            
+            <!-- Progress Bar Affidabilità -->
+            <div class="user-progress-wrapper">
+                <div class="user-progress-bar" style="width: <?php echo $affidabilita; ?>%; background: <?php 
+                    echo $affidabilita >= 80 ? '#10B981' : ($affidabilita >= 50 ? '#F59E0B' : '#EF4444'); 
+                ?>"></div>
+            </div>
         </div>
-        <?php endforeach; ?>
-        
-        <?php endif; ?>
     </div>
+    <?php endforeach; ?>
+    
+    <?php endif; ?>
 </div>
 
 <!-- ============================================================================
      MODAL: DETTAGLIO UTENTE
      ============================================================================ -->
 <div class="modal fade" id="modalDettaglioUtente" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content modal-dark-custom">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content modal-utente-content">
             <!-- Header -->
-            <div class="modal-header modal-header-user" id="modalUserHeader">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="user-avatar-large" id="detailAvatar">AB</div>
-                    <div>
-                        <h5 class="modal-title mb-1" id="detailNome">Nome Utente</h5>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="badge-role" id="detailRuolo">👤 Utente</span>
-                            <span class="text-muted" id="detailEmail">email@example.com</span>
+            <div class="modal-header modal-utente-header">
+                <div class="modal-user-info">
+                    <div class="modal-user-avatar" id="modalUserAvatar">MB</div>
+                    <div class="modal-user-details">
+                        <h5 class="modal-user-name" id="modalUserName">Nome Utente</h5>
+                        <span class="modal-user-status" id="modalUserStatus">● Attivo</span>
+                        <div class="modal-user-meta">
+                            <span id="modalUserEmail">📧 email@example.com</span>
+                            <span id="modalUserCorso">🎓 Ingegneria</span>
+                            <span id="modalUserAnno">📅 Anno 3</span>
                         </div>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="status-badge-modal" id="detailStatus">
-                        <span class="status-dot-modal"></span>
-                        <span class="status-text-modal">Attivo</span>
-                    </div>
-                    <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             
             <!-- Tabs -->
-            <div class="modal-tabs-wrapper">
-                <ul class="nav nav-tabs-custom" role="tablist">
-                    <li class="nav-item">
-                        <button class="nav-link-custom active" data-bs-toggle="tab" data-bs-target="#tabInfo" type="button">
-                            📋 Informazioni
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#tabStats" type="button">
-                            📊 Statistiche
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#tabPenalty" type="button">
-                            ⚠️ Penalty
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#tabSegnalazioni" type="button">
-                            🚩 Segnalazioni
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#tabBadges" type="button">
-                            🏆 Badge
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#tabAzioni" type="button">
-                            ⚡ Azioni
-                        </button>
-                    </li>
-                </ul>
-            </div>
+            <ul class="nav nav-tabs modal-utente-tabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabInfo" type="button">
+                        📋 Informazioni
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAttivita" type="button">
+                        📊 Attività
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabSegnalazioni" type="button">
+                        🚩 Segnalazioni
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAzioni" type="button">
+                        ⚡ Azioni
+                    </button>
+                </li>
+            </ul>
             
             <!-- Body -->
-            <div class="modal-body modal-body-tabs">
+            <div class="modal-body modal-utente-body">
                 <div class="tab-content">
                     
                     <!-- Tab Informazioni -->
                     <div class="tab-pane fade show active" id="tabInfo">
                         <div class="row g-4">
+                            <!-- Statistiche -->
                             <div class="col-md-6">
-                                <h4 class="tab-section-title mb-3">📋 Dati Anagrafici</h4>
-                                <div class="info-grid">
-                                    <div class="info-item">
-                                        <span class="info-label">Nome completo</span>
-                                        <span class="info-value" id="infoNomeCompleto">-</span>
+                                <h6 class="section-title">📊 Statistiche</h6>
+                                <div class="stats-grid">
+                                    <div class="stat-box">
+                                        <span class="stat-box-icon">📅</span>
+                                        <span class="stat-box-value" id="statPrenotazioni">0</span>
+                                        <span class="stat-box-label">Prenotazioni Totali</span>
                                     </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Email</span>
-                                        <span class="info-value" id="infoEmail">-</span>
+                                    <div class="stat-box">
+                                        <span class="stat-box-icon">✅</span>
+                                        <span class="stat-box-value" id="statCompletate">0</span>
+                                        <span class="stat-box-label">Completate</span>
                                     </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Telefono</span>
-                                        <span class="info-value" id="infoTelefono">-</span>
+                                    <div class="stat-box stat-danger">
+                                        <span class="stat-box-icon">❌</span>
+                                        <span class="stat-box-value" id="statNoShow">0</span>
+                                        <span class="stat-box-label">No-Show</span>
                                     </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Data di nascita</span>
-                                        <span class="info-value" id="infoDataNascita">-</span>
+                                    <div class="stat-box">
+                                        <span class="stat-box-icon">🚫</span>
+                                        <span class="stat-box-value" id="statCancellazioni">0</span>
+                                        <span class="stat-box-label">Cancellazioni</span>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Affidabilità -->
                             <div class="col-md-6">
-                                <h4 class="tab-section-title mb-3">🎓 Info Universitarie</h4>
-                                <div class="info-grid">
-                                    <div class="info-item">
-                                        <span class="info-label">Corso di laurea</span>
-                                        <span class="info-value" id="infoCorso">-</span>
+                                <h6 class="section-title">⭐ Affidabilità & Livello</h6>
+                                
+                                <div class="affidabilita-card">
+                                    <div class="affidabilita-row">
+                                        <span>Punteggio Affidabilità</span>
+                                        <span class="affidabilita-value" id="modalAffidabilita">96%</span>
                                     </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Facoltà</span>
-                                        <span class="info-value" id="infoFacolta">-</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Anno iscrizione</span>
-                                        <span class="info-value" id="infoAnnoIscrizione">-</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Registrato il</span>
-                                        <span class="info-value" id="infoRegistrato">-</span>
+                                    <div class="affidabilita-bar-bg">
+                                        <div class="affidabilita-bar" id="modalAffidabilitaBar"></div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Attività Recenti -->
-                        <div class="mt-4">
-                            <h4 class="tab-section-title mb-3">🕐 Attività Recenti</h4>
-                            <div class="activity-timeline" id="activityTimeline">
-                                <!-- Caricato via JS -->
+                                
+                                <div class="penalty-card">
+                                    <span>⚠️ Penalty Points</span>
+                                    <span class="penalty-value" id="modalPenaltyValue">0</span>
+                                </div>
+                                
+                                <div class="badges-card">
+                                    <span class="badges-title">🏆 Badge Sbloccati (<span id="modalBadgeCount">0</span>)</span>
+                                    <div class="badges-list" id="modalBadgesList"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Tab Statistiche -->
-                    <div class="tab-pane fade" id="tabStats">
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <div class="stat-card-big">
-                                    <div class="stat-card-icon">📅</div>
-                                    <div class="stat-card-value" id="statPrenotazioni">0</div>
-                                    <div class="stat-card-label">Prenotazioni Totali</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card-big">
-                                    <div class="stat-card-icon">✅</div>
-                                    <div class="stat-card-value" id="statCompletate">0</div>
-                                    <div class="stat-card-label">Completate</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card-big">
-                                    <div class="stat-card-icon">❌</div>
-                                    <div class="stat-card-value" id="statNoShow">0</div>
-                                    <div class="stat-card-label">No-Show</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row g-4 mt-2">
-                            <div class="col-md-4">
-                                <div class="stat-card-big">
-                                    <div class="stat-card-icon">⏱️</div>
-                                    <div class="stat-card-value" id="statOre">0</div>
-                                    <div class="stat-card-label">Ore Giocate</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card-big">
-                                    <div class="stat-card-icon">🏆</div>
-                                    <div class="stat-card-value" id="statTornei">0</div>
-                                    <div class="stat-card-label">Tornei Partecipati</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card-big">
-                                    <div class="stat-card-icon">🥇</div>
-                                    <div class="stat-card-value" id="statVittorie">0</div>
-                                    <div class="stat-card-label">Tornei Vinti</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Affidabilità -->
-                        <div class="mt-4">
-                            <h4 class="tab-section-title mb-3">📈 Indice di Affidabilità</h4>
-                            <div class="affidabilita-box">
-                                <div class="affidabilita-score" id="affidabilitaScore">0%</div>
-                                <div class="affidabilita-bar-wrapper">
-                                    <div class="affidabilita-bar" id="affidabilitaBar" style="width: 0%"></div>
-                                </div>
-                                <div class="affidabilita-label" id="affidabilitaLabel">Calcolo in corso...</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tab Penalty -->
-                    <div class="tab-pane fade" id="tabPenalty">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="tab-section-title mb-0">⚠️ Penalty Points</h4>
-                            <div class="penalty-current">
-                                <span class="penalty-label">Punteggio attuale:</span>
-                                <span class="penalty-value" id="penaltyCurrentValue">0</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Azioni Penalty -->
-                        <div class="penalty-actions mb-4">
-                            <button class="btn-action-penalty add" onclick="showPenaltyModal('add')">
-                                ➕ Aggiungi Penalty
-                            </button>
-                            <button class="btn-action-penalty remove" onclick="showPenaltyModal('remove')">
-                                ➖ Rimuovi Penalty
-                            </button>
-                            <button class="btn-action-penalty reset" onclick="resetPenalty()">
-                                🔄 Azzera Tutto
-                            </button>
-                        </div>
-                        
-                        <!-- Storico Penalty -->
-                        <h5 class="mb-3">📜 Storico Modifiche</h5>
-                        <div class="penalty-log-list" id="penaltyLogList">
-                            <!-- Caricato via JS -->
+                    <!-- Tab Attività -->
+                    <div class="tab-pane fade" id="tabAttivita">
+                        <h6 class="section-title">🕐 Attività Recenti</h6>
+                        <div class="activity-list" id="modalActivityList">
+                            <div class="no-data">Nessuna attività recente</div>
                         </div>
                     </div>
                     
@@ -477,328 +376,273 @@ include 'header.php';
                     <div class="tab-pane fade" id="tabSegnalazioni">
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <h4 class="tab-section-title mb-3">📥 Segnalazioni Ricevute</h4>
-                                <div class="segnalazioni-list" id="segnalazioniRicevuteList">
-                                    <!-- Caricato via JS -->
+                                <h6 class="section-title">📥 Segnalazioni Ricevute</h6>
+                                <div class="segnalazioni-list" id="modalSegnalazioniRicevute">
+                                    <div class="no-data">Nessuna segnalazione ricevuta</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <h4 class="tab-section-title mb-3">📤 Segnalazioni Fatte</h4>
-                                <div class="segnalazioni-list" id="segnalazioniFatteList">
-                                    <!-- Caricato via JS -->
+                                <h6 class="section-title">📤 Segnalazioni Fatte</h6>
+                                <div class="segnalazioni-list" id="modalSegnalazioniFatte">
+                                    <div class="no-data">Nessuna segnalazione fatta</div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tab Badge -->
-                    <div class="tab-pane fade" id="tabBadges">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="tab-section-title mb-0">🏆 Badge e Gamification</h4>
-                            <div class="xp-display">
-                                <span class="xp-icon">⭐</span>
-                                <span class="xp-value" id="xpValue">0</span>
-                                <span class="xp-label">XP</span>
-                            </div>
-                        </div>
-                        
-                        <div class="badges-grid" id="badgesGrid">
-                            <!-- Caricato via JS -->
                         </div>
                     </div>
                     
                     <!-- Tab Azioni -->
                     <div class="tab-pane fade" id="tabAzioni">
-                        <h4 class="tab-section-title mb-3">⚡ Azioni Amministrative</h4>
-                        
-                        <div class="actions-grid">
-                            <!-- Modifica Ruolo -->
-                            <div class="action-card">
-                                <div class="action-icon">👑</div>
-                                <h5 class="action-title">Modifica Ruolo</h5>
-                                <p class="action-desc">Promuovi o rimuovi privilegi admin</p>
-                                <div class="action-buttons">
-                                    <button class="btn-action promote" id="btnPromuoviAdmin" onclick="changeRole('admin')">
-                                        Promuovi ad Admin
-                                    </button>
-                                    <button class="btn-action demote" id="btnRimuoviAdmin" onclick="changeRole('user')" style="display:none;">
-                                        Rimuovi Admin
-                                    </button>
+                        <div class="row g-3">
+                            <!-- Penalty Points -->
+                            <div class="col-md-6">
+                                <div class="action-box">
+                                    <h6>⚠️ Penalty Points</h6>
+                                    <p>Attualmente: <span id="actionPenaltyCount">0</span> punti</p>
+                                    <div class="action-btns">
+                                        <button class="btn-action-warning" id="btnResetPenalty">🔄 Reset</button>
+                                        <button class="btn-action-danger" id="btnAddPenalty">+ Aggiungi</button>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Sospensione -->
-                            <div class="action-card">
-                                <div class="action-icon">⏸️</div>
-                                <h5 class="action-title">Sospensione</h5>
-                                <p class="action-desc">Sospendi temporaneamente l'account</p>
-                                <div class="action-buttons">
-                                    <button class="btn-action suspend" id="btnSospendi" onclick="showSuspendModal()">
-                                        Sospendi Utente
-                                    </button>
-                                    <button class="btn-action reactivate" id="btnRiabilita" onclick="reactivateUser()" style="display:none;">
-                                        Riabilita Utente
-                                    </button>
+                            <!-- Sospensione / Riattiva -->
+                            <div class="col-md-6">
+                                <div class="action-box" id="boxSospensione">
+                                    <h6 id="sospensioneTitle">⏸️ Sospensione</h6>
+                                    <p id="sospensioneDesc">Sospendi temporaneamente l'utente</p>
+                                    <button class="btn-action-warning" id="btnSospendi">⏸️ Sospendi</button>
+                                    <button class="btn-action-success" id="btnRiattiva" style="display:none;">✅ Riattiva Utente</button>
                                 </div>
                             </div>
                             
-                            <!-- Ban -->
-                            <div class="action-card danger">
-                                <div class="action-icon">🚫</div>
-                                <h5 class="action-title">Ban Permanente</h5>
-                                <p class="action-desc">Banna definitivamente l'utente</p>
-                                <button class="btn-action ban" id="btnBan" onclick="showBanModal()">
-                                    Banna Utente
-                                </button>
+                            <!-- Ban / Sbanna -->
+                            <div class="col-md-6">
+                                <div class="action-box" id="boxBan">
+                                    <h6 id="banTitle">🚫 Ban Permanente</h6>
+                                    <p id="banDesc">Azione irreversibile - richiede conferma</p>
+                                    <button class="btn-action-danger-outline" id="btnBan">🚫 Banna Utente</button>
+                                    <button class="btn-action-success" id="btnSbanna" style="display:none;">✅ Rimuovi Ban</button>
+                                </div>
                             </div>
                             
-                            <!-- Invia Messaggio -->
-                            <div class="action-card">
-                                <div class="action-icon">✉️</div>
-                                <h5 class="action-title">Comunicazione</h5>
-                                <p class="action-desc">Invia un messaggio all'utente</p>
-                                <button class="btn-action message" onclick="showMessageModal()">
-                                    Invia Messaggio
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Storico Sanzioni -->
-                        <div class="mt-4">
-                            <h5 class="mb-3">📜 Storico Sanzioni</h5>
-                            <div class="sanzioni-list" id="sanzioniList">
-                                <!-- Caricato via JS -->
+                            <!-- Info Stato -->
+                            <div class="col-md-6">
+                                <div class="action-box action-box-info" id="boxStatoInfo">
+                                    <h6>ℹ️ Stato Attuale</h6>
+                                    <p id="statoInfoDesc">L'utente è attivo</p>
+                                    <div class="stato-badge-large" id="statoInfoBadge">
+                                        <span class="status-dot green"></span> Attivo
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
             
             <!-- Footer -->
-            <div class="modal-footer modal-footer-dark justify-content-end">
-                <button type="button" class="btn-add-new" id="btnModificaUtente" style="display:none;">
-                    ✏️ Modifica Profilo
-                </button>
+            <div class="modal-footer modal-utente-footer">
+                <span class="footer-registrato" id="modalRegistrato">Registrato il 01/01/2024</span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- ============================================================================
-     MODAL: SOSPENSIONE UTENTE
+     MODAL: SOSPENSIONE
      ============================================================================ -->
 <div class="modal fade" id="modalSospensione" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content nuovo-campo-modal">
-            <div class="modal-header nuovo-campo-header">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="modal-header-icon">⏸️</div>
-                    <div>
-                        <h5 class="modal-title">Sospendi Utente</h5>
-                        <p class="modal-subtitle mb-0" id="sospensioneSubtitle">Seleziona durata e motivo</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+        <div class="modal-content modal-utente-content">
+            <div class="modal-header">
+                <h5 class="modal-title">⏸️ Sospendi Utente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body nuovo-campo-body">
+            <div class="modal-body">
                 <form id="formSospensione">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="nc-label">Durata (giorni) <span class="text-danger">*</span></label>
-                            <input type="number" class="nc-input" name="giorni" min="1" max="365" value="7" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="nc-label">Durata predefinita</label>
-                            <select class="nc-select" onchange="document.querySelector('[name=giorni]').value = this.value">
-                                <option value="1">1 giorno</option>
-                                <option value="3">3 giorni</option>
-                                <option value="7" selected>1 settimana</option>
-                                <option value="14">2 settimane</option>
-                                <option value="30">1 mese</option>
-                                <option value="90">3 mesi</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="nc-label">Motivo <span class="text-danger">*</span></label>
-                            <textarea class="nc-textarea" name="motivo" rows="3" placeholder="Descrivi il motivo della sospensione..." required></textarea>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Durata sospensione</label>
+                        <select class="form-select form-select-dark" name="giorni" required>
+                            <option value="1">1 giorno</option>
+                            <option value="3">3 giorni</option>
+                            <option value="7" selected>7 giorni</option>
+                            <option value="14">14 giorni</option>
+                            <option value="30">30 giorni</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo</label>
+                        <textarea class="form-control form-control-dark" name="motivo" rows="3" placeholder="Inserisci il motivo della sospensione..." required></textarea>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer nuovo-campo-footer">
-                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="nc-btn-submit" id="btnConfirmSospensione" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                    ⏸️ Sospendi
-                </button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmSospensione">Sospendi</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- ============================================================================
-     MODAL: BAN PERMANENTE
+     MODAL: BAN
      ============================================================================ -->
 <div class="modal fade" id="modalBan" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content nuovo-campo-modal">
-            <div class="modal-header nuovo-campo-header" style="--header-gradient: linear-gradient(135deg, #ef4444, #dc2626);">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="modal-header-icon">🚫</div>
-                    <div>
-                        <h5 class="modal-title">Ban Permanente</h5>
-                        <p class="modal-subtitle mb-0" id="banSubtitle">Questa azione è irreversibile</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+        <div class="modal-content modal-utente-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🚫 Ban Permanente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body nuovo-campo-body">
-                <div class="alert-warning-custom mb-3">
-                    ⚠️ <strong>Attenzione:</strong> Il ban è permanente e difficilmente reversibile. L'utente perderà l'accesso al sistema e tutte le prenotazioni future verranno cancellate.
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    ⚠️ Attenzione: questa azione è irreversibile!
                 </div>
                 <form id="formBan">
                     <div class="mb-3">
-                        <label class="nc-label">Motivo del Ban <span class="text-danger">*</span></label>
-                        <textarea class="nc-textarea" name="motivo" rows="4" placeholder="Descrivi dettagliatamente il motivo del ban..." required></textarea>
+                        <label class="form-label">Motivo del ban</label>
+                        <textarea class="form-control form-control-dark" name="motivo" rows="3" placeholder="Inserisci il motivo del ban..." required></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="nc-checkbox-label">
-                            <input type="checkbox" name="conferma" required>
-                            <span>Confermo di voler bannare permanentemente questo utente</span>
-                        </label>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="conferma" id="confermaBan" required>
+                        <label class="form-check-label" for="confermaBan">Confermo di voler bannare permanentemente questo utente</label>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer nuovo-campo-footer">
-                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="nc-btn-submit" id="btnConfirmBan" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-                    🚫 Conferma Ban
-                </button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmBan">Banna Utente</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- ============================================================================
-     MODAL: PENALTY POINTS
+     MODAL: PENALTY - Aggiungi
      ============================================================================ -->
 <div class="modal fade" id="modalPenalty" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content nuovo-campo-modal">
-            <div class="modal-header nuovo-campo-header">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="modal-header-icon" id="penaltyModalIcon">➕</div>
-                    <div>
-                        <h5 class="modal-title" id="penaltyModalTitle">Gestisci Penalty</h5>
-                        <p class="modal-subtitle mb-0" id="penaltyModalSubtitle">Modifica penalty points</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+        <div class="modal-content modal-utente-content">
+            <div class="modal-header">
+                <h5 class="modal-title">⚠️ Aggiungi Penalty Points</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body nuovo-campo-body">
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    ⚠️ I penalty points influiscono sul punteggio di affidabilità dell'utente.
+                </div>
+                <div class="penalty-info-box">
+                    <p><strong>Penalty attuali:</strong> <span id="addCurrentPenalty">0</span> punti</p>
+                </div>
                 <form id="formPenalty">
-                    <input type="hidden" name="action" id="penaltyAction" value="add">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="nc-label">Punti <span class="text-danger">*</span></label>
-                            <input type="number" class="nc-input" name="punti" min="1" max="10" value="1" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="nc-label">Descrizione</label>
-                            <textarea class="nc-textarea" name="descrizione" rows="2" placeholder="Motivo della modifica..."></textarea>
-                        </div>
+                    <input type="hidden" id="penaltyAction" value="add">
+                    <div class="mb-3">
+                        <label class="form-label">Numero punti da aggiungere</label>
+                        <input type="number" class="form-control form-control-dark" name="punti" min="1" max="10" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo</label>
+                        <textarea class="form-control form-control-dark" name="descrizione" rows="2" placeholder="Es: No-show alla prenotazione, comportamento scorretto..." required></textarea>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer nuovo-campo-footer">
-                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="nc-btn-submit" id="btnConfirmPenalty">
-                    ✓ Conferma
-                </button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmPenalty">⚠️ Aggiungi Punti</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- ============================================================================
-     MODAL: INVIA MESSAGGIO
+     MODAL: RESET PENALTY
      ============================================================================ -->
-<div class="modal fade" id="modalMessaggio" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalResetPenalty" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content nuovo-campo-modal">
-            <div class="modal-header nuovo-campo-header">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="modal-header-icon">✉️</div>
-                    <div>
-                        <h5 class="modal-title">Invia Messaggio</h5>
-                        <p class="modal-subtitle mb-0" id="messaggioSubtitle">Comunica con l'utente</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+        <div class="modal-content modal-utente-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🔄 Reset Penalty Points</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body nuovo-campo-body">
-                <form id="formMessaggio">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="nc-label">Oggetto <span class="text-danger">*</span></label>
-                            <input type="text" class="nc-input" name="oggetto" placeholder="Oggetto del messaggio..." required>
-                        </div>
-                        <div class="col-12">
-                            <label class="nc-label">Messaggio <span class="text-danger">*</span></label>
-                            <textarea class="nc-textarea" name="messaggio" rows="5" placeholder="Scrivi il messaggio..." required></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="nc-label">Tipo invio</label>
-                            <select class="nc-select" name="tipo_invio">
-                                <option value="notifica">🔔 Solo notifica in-app</option>
-                                <option value="email">📧 Solo email</option>
-                                <option value="entrambi">📬 Notifica + Email</option>
-                            </select>
-                        </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    ⚠️ Stai per azzerare tutti i penalty points di questo utente.
+                </div>
+                <div class="reset-info-box">
+                    <p><strong>Penalty attuali:</strong> <span id="resetCurrentPenalty">0</span> punti</p>
+                    <p><strong>Dopo il reset:</strong> 0 punti</p>
+                </div>
+                <form id="formResetPenalty">
+                    <div class="mb-3">
+                        <label class="form-label">Motivo del reset (opzionale)</label>
+                        <textarea class="form-control form-control-dark" name="motivo" rows="2" placeholder="Es: Comportamento migliorato, errore di sistema..."></textarea>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer nuovo-campo-footer">
-                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="nc-btn-submit" id="btnConfirmMessaggio">
-                    ✉️ Invia
-                </button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmResetPenalty">🔄 Azzera Punti</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- ============================================================================
-     TOAST NOTIFICATIONS
+     MODAL: RIMUOVI BAN
      ============================================================================ -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
-    <div id="toastNotification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <span class="toast-icon me-2">✅</span>
-            <strong class="me-auto toast-title">Notifica</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+<div class="modal fade" id="modalSbanna" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-utente-content">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(16, 185, 129, 0.3);">
+                <h5 class="modal-title">✅ Rimuovi Ban</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success-custom">
+                    ✅ L'utente potrà nuovamente accedere alla piattaforma
+                </div>
+                <p style="color: #cbd5e1; margin-bottom: 16px;">
+                    Stai per rimuovere il ban dall'utente <strong id="sbannaUserName" style="color: #f1f5f9;">-</strong>.
+                </p>
+                <p style="color: #94a3b8; font-size: 14px;">
+                    L'utente tornerà attivo e potrà effettuare prenotazioni normalmente.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-success" id="btnConfirmSbanna">✅ Rimuovi Ban</button>
+            </div>
         </div>
-        <div class="toast-body"></div>
+    </div>
+</div>
+
+<!-- ============================================================================
+     MODAL: RIATTIVA UTENTE
+     ============================================================================ -->
+<div class="modal fade" id="modalRiattiva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-utente-content">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(16, 185, 129, 0.3);">
+                <h5 class="modal-title">✅ Riattiva Utente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success-custom">
+                    ✅ La sospensione verrà rimossa
+                </div>
+                <p style="color: #cbd5e1; margin-bottom: 16px;">
+                    Stai per riattivare l'utente <strong id="riattivaUserName" style="color: #f1f5f9;">-</strong>.
+                </p>
+                <p style="color: #94a3b8; font-size: 14px;">
+                    L'utente tornerà attivo e potrà effettuare prenotazioni normalmente.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-success" id="btnConfirmRiattiva">✅ Riattiva Utente</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -806,440 +650,333 @@ include 'header.php';
      JAVASCRIPT
      ============================================================================ -->
 <script>
+let currentUserId = null;
+let currentFilters = {
+    ruolo: '<?php echo $filtri['ruolo']; ?>',
+    stato: '<?php echo $filtri['stato']; ?>',
+    corso: '<?php echo $filtri['corso']; ?>',
+    ordina: '<?php echo $filtri['ordina']; ?>',
+    search: '<?php echo $filtri['search']; ?>'
+};
+
+// Click su card utente (esclusi admin)
+document.querySelectorAll('.user-card:not(.admin-card)').forEach(card => {
+    card.addEventListener('click', function() {
+        const userId = this.dataset.userId;
+        openUserModal(userId);
+    });
+});
+
+// Apri modal utente
+function openUserModal(userId) {
+    currentUserId = userId;
+    loadUserDetail(userId);
+    const modal = new bootstrap.Modal(document.getElementById('modalDettaglioUtente'));
+    modal.show();
+}
+
+// Carica dettaglio utente
+function loadUserDetail(userId) {
+    fetch(`gestione-utenti.php?action=get_user&user_id=${userId}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            populateUserModal(data);
+        } else {
+            showToast(data.message || 'Errore caricamento', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Errore di connessione', 'error');
+    });
+}
+
+// Popola il modal con i dati
+function populateUserModal(data) {
+    const user = data.user;
+    const stats = data.stats || {};
+    
+    // Header
+    document.getElementById('modalUserAvatar').textContent = 
+        (user.nome?.charAt(0) || '') + (user.cognome?.charAt(0) || '');
+    document.getElementById('modalUserAvatar').style.background = 
+        user.ruolo === 'admin' ? 'linear-gradient(135deg, #8B5CF6, #8B5CF688)' : 'linear-gradient(135deg, #3B82F6, #3B82F688)';
+    document.getElementById('modalUserName').textContent = `${user.nome} ${user.cognome}`;
+    
+    // Status
+    const statusColors = { attivo: '#10B981', sospeso: '#F59E0B', bannato: '#EF4444' };
+    const statusEl = document.getElementById('modalUserStatus');
+    statusEl.style.color = statusColors[user.stato] || '#10B981';
+    statusEl.textContent = `● ${user.stato?.charAt(0).toUpperCase() + user.stato?.slice(1) || 'Attivo'}`;
+    
+    // Meta
+    document.getElementById('modalUserEmail').textContent = `📧 ${user.email || '-'}`;
+    document.getElementById('modalUserCorso').textContent = `🎓 ${user.corso_nome || '-'}`;
+    document.getElementById('modalUserAnno').textContent = `📅 Anno ${user.anno_iscrizione || '-'}`;
+    
+    // Stats
+    document.getElementById('statPrenotazioni').textContent = stats.totale_prenotazioni || 0;
+    document.getElementById('statCompletate').textContent = stats.completate || 0;
+    document.getElementById('statNoShow').textContent = stats.no_show || 0;
+    document.getElementById('statCancellazioni').textContent = stats.cancellate || 0;
+    
+    // Affidabilità
+    const penaltyPoints = user.penalty_points || 0;
+    const noShow = stats.no_show || 0;
+    const affidabilita = Math.max(0, Math.min(100, 100 - (penaltyPoints * 5) - (noShow * 3)));
+    document.getElementById('modalAffidabilita').textContent = `${affidabilita}%`;
+    const affBar = document.getElementById('modalAffidabilitaBar');
+    affBar.style.width = `${affidabilita}%`;
+    affBar.style.background = affidabilita >= 80 ? '#10B981' : (affidabilita >= 50 ? '#F59E0B' : '#EF4444');
+    
+    // Penalty
+    document.getElementById('modalPenaltyValue').textContent = penaltyPoints;
+    document.getElementById('actionPenaltyCount').textContent = penaltyPoints;
+    
+    // Disabilita il bottone Reset se i penalty sono già a 0
+    const btnResetPenalty = document.getElementById('btnResetPenalty');
+    if (penaltyPoints === 0) {
+        btnResetPenalty.disabled = true;
+        btnResetPenalty.style.opacity = '0.5';
+        btnResetPenalty.style.cursor = 'not-allowed';
+        btnResetPenalty.title = 'Nessun punto da azzerare';
+    } else {
+        btnResetPenalty.disabled = false;
+        btnResetPenalty.style.opacity = '1';
+        btnResetPenalty.style.cursor = 'pointer';
+        btnResetPenalty.title = '';
+    }
+    
+    // Badge - Mostra solo la descrizione (non il nome file .png)
+    const badges = data.badges || [];
+    document.getElementById('modalBadgeCount').textContent = badges.length;
+    const badgesList = document.getElementById('modalBadgesList');
+    if (badges.length > 0) {
+        badgesList.innerHTML = badges.map(b => `<span class="badge-item">🏅 ${b.descrizione || b.nome}</span>`).join('');
+    } else {
+        badgesList.innerHTML = '<span class="no-badges">Nessun badge sbloccato</span>';
+    }
+    
+    // Attività recenti
+    const attivita = data.attivita_recenti || [];
+    const activityList = document.getElementById('modalActivityList');
+    if (attivita.length > 0) {
+        activityList.innerHTML = attivita.map(a => `
+            <div class="activity-item">
+                <span class="activity-icon">${a.icona || '📋'}</span>
+                <span class="activity-text">${a.descrizione}</span>
+                <span class="activity-time">${a.created_at}</span>
+            </div>
+        `).join('');
+    } else {
+        activityList.innerHTML = '<div class="no-data">Nessuna attività recente</div>';
+    }
+    
+    // Segnalazioni Ricevute
+    const segnRicevute = data.segnalazioni_ricevute || [];
+    document.getElementById('modalSegnalazioniRicevute').innerHTML = segnRicevute.length > 0 ?
+        segnRicevute.map(s => `
+            <div class="segnalazione-item">
+                <div class="segnalazione-motivo">${s.motivo || 'Nessun motivo specificato'}</div>
+                <div class="segnalazione-meta">Da: ${s.segnalante_nome || '-'} • ${formatDataItaliana(s.created_at)}</div>
+            </div>
+        `).join('') :
+        '<div class="no-data">Nessuna segnalazione ricevuta</div>';
+    
+    // Segnalazioni Fatte
+    const segnFatte = data.segnalazioni_fatte || [];
+    document.getElementById('modalSegnalazioniFatte').innerHTML = segnFatte.length > 0 ?
+        segnFatte.map(s => `
+            <div class="segnalazione-item">
+                <div class="segnalazione-motivo">${s.motivo || 'Nessun motivo specificato'}</div>
+                <div class="segnalazione-meta">Verso: ${s.segnalato_nome || '-'} • ${formatDataItaliana(s.created_at)}</div>
+            </div>
+        `).join('') :
+        '<div class="no-data">Nessuna segnalazione fatta</div>';
+    
+    // Footer - Data registrazione formato gg/mm/aaaa
+    const dataReg = user.created_at ? formatDataItaliana(user.created_at) : '-';
+    document.getElementById('modalRegistrato').textContent = `Registrato il ${dataReg}`;
+    
+    // ============================================================================
+    // GESTIONE STATO UTENTE - Mostra bottoni corretti
+    // ============================================================================
+    const stato = user.stato || 'attivo';
+    
+    // Bottoni Sospensione/Riattiva
+    const btnSospendi = document.getElementById('btnSospendi');
+    const btnRiattiva = document.getElementById('btnRiattiva');
+    const sospensioneTitle = document.getElementById('sospensioneTitle');
+    const sospensioneDesc = document.getElementById('sospensioneDesc');
+    
+    if (stato === 'sospeso') {
+        btnSospendi.style.display = 'none';
+        btnRiattiva.style.display = 'inline-flex';
+        sospensioneTitle.textContent = '✅ Riattiva Utente';
+        sospensioneDesc.textContent = 'L\'utente è attualmente sospeso';
+    } else {
+        btnSospendi.style.display = 'inline-flex';
+        btnRiattiva.style.display = 'none';
+        sospensioneTitle.textContent = '⏸️ Sospensione';
+        sospensioneDesc.textContent = 'Sospendi temporaneamente l\'utente';
+    }
+    
+    // Bottoni Ban/Sbanna
+    const btnBan = document.getElementById('btnBan');
+    const btnSbanna = document.getElementById('btnSbanna');
+    const banTitle = document.getElementById('banTitle');
+    const banDesc = document.getElementById('banDesc');
+    const boxBan = document.getElementById('boxBan');
+    
+    if (stato === 'bannato') {
+        btnBan.style.display = 'none';
+        btnSbanna.style.display = 'inline-flex';
+        banTitle.textContent = '✅ Rimuovi Ban';
+        banDesc.textContent = 'L\'utente è attualmente bannato';
+        boxBan.classList.remove('action-box-danger');
+        boxBan.classList.add('action-box-success');
+    } else {
+        btnBan.style.display = 'inline-flex';
+        btnSbanna.style.display = 'none';
+        banTitle.textContent = '🚫 Ban Permanente';
+        banDesc.textContent = 'Azione irreversibile - richiede conferma';
+        boxBan.classList.add('action-box-danger');
+        boxBan.classList.remove('action-box-success');
+    }
+    
+    // Info Stato
+    const statoInfoDesc = document.getElementById('statoInfoDesc');
+    const statoInfoBadge = document.getElementById('statoInfoBadge');
+    
+    const statoConfig = {
+        'attivo': { desc: 'L\'utente può utilizzare normalmente la piattaforma', badge: '<span class="status-dot green"></span> Attivo', color: '#10B981' },
+        'sospeso': { desc: 'L\'utente è temporaneamente sospeso', badge: '<span class="status-dot orange"></span> Sospeso', color: '#F59E0B' },
+        'bannato': { desc: 'L\'utente è stato bannato permanentemente', badge: '<span class="status-dot red"></span> Bannato', color: '#EF4444' }
+    };
+    
+    const statoInfo = statoConfig[stato] || statoConfig['attivo'];
+    statoInfoDesc.textContent = statoInfo.desc;
+    statoInfoBadge.innerHTML = statoInfo.badge;
+    statoInfoBadge.style.borderColor = statoInfo.color;
+}
+
+// Formatta data in formato italiano gg/mm/aaaa
+function formatDataItaliana(dataStr) {
+    if (!dataStr) return '-';
+    const parts = dataStr.split(' ')[0].split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dataStr;
+}
+
+// Toast
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Applica filtri
+function applyFilters() {
+    const url = new URL(window.location);
+    url.searchParams.set('ruolo', currentFilters.ruolo);
+    url.searchParams.set('stato', currentFilters.stato);
+    url.searchParams.set('corso', currentFilters.corso);
+    url.searchParams.set('ordina', currentFilters.ordina);
+    url.searchParams.set('search', currentFilters.search);
+    window.location = url;
+}
+
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
 document.addEventListener('DOMContentLoaded', function() {
     
     // ============================================================================
-    // VARIABILI GLOBALI
+    // FIX MODAL - Sposta i modal nel body SUBITO per evitare problemi di z-index
+    // Deve essere la prima cosa eseguita!
     // ============================================================================
-    let currentUserId = null;
-    let currentUserData = null;
-    
-    // ============================================================================
-    // TOAST NOTIFICATIONS
-    // ============================================================================
-    function showToast(message, type = 'success') {
-        const toast = document.getElementById('toastNotification');
-        const toastBody = toast.querySelector('.toast-body');
-        const toastIcon = toast.querySelector('.toast-icon');
-        const toastTitle = toast.querySelector('.toast-title');
-        
-        toastBody.textContent = message;
-        toast.classList.remove('bg-success', 'bg-danger', 'bg-warning');
-        
-        if (type === 'success') {
-            toastIcon.textContent = '✅';
-            toastTitle.textContent = 'Successo';
-            toast.classList.add('bg-success');
-        } else if (type === 'error') {
-            toastIcon.textContent = '❌';
-            toastTitle.textContent = 'Errore';
-            toast.classList.add('bg-danger');
-        } else {
-            toastIcon.textContent = '⚠️';
-            toastTitle.textContent = 'Attenzione';
-            toast.classList.add('bg-warning');
+    const modalsToMove = ['modalDettaglioUtente', 'modalSospensione', 'modalBan', 'modalPenalty', 'modalResetPenalty', 'modalSbanna', 'modalRiattiva'];
+    modalsToMove.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
         }
-        
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-    }
+    });
     
-    // ============================================================================
-    // CLICK SU CARD UTENTE
-    // ============================================================================
-    document.querySelectorAll('.user-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const userId = this.dataset.userId;
-            currentUserId = userId;
-            loadUserDetail(userId);
+    // Filter chips
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            const value = this.dataset.value;
+            currentFilters[filter] = value;
+            applyFilters();
         });
     });
     
-    // ============================================================================
-    // CARICA DETTAGLIO UTENTE
-    // ============================================================================
-    function loadUserDetail(userId) {
-        fetch(`gestione-utenti.php?action=get_user&user_id=${userId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentUserData = data;
-                    populateUserModal(data);
-                    new bootstrap.Modal(document.getElementById('modalDettaglioUtente')).show();
-                } else {
-                    showToast(data.message || 'Errore nel caricamento', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Errore di connessione', 'error');
-            });
-    }
+    // Selects
+    document.getElementById('selectCorso').addEventListener('change', function() {
+        currentFilters.corso = this.value;
+        applyFilters();
+    });
     
-    // ============================================================================
-    // POPOLA MODAL UTENTE
-    // ============================================================================
-    function populateUserModal(data) {
-        const user = data.user;
-        const stats = data.stats || {};
-        
-        // Header
-        const initials = (user.nome?.charAt(0) || '') + (user.cognome?.charAt(0) || '');
-        document.getElementById('detailAvatar').textContent = initials.toUpperCase();
-        document.getElementById('detailNome').textContent = `${user.nome} ${user.cognome}`;
-        document.getElementById('detailEmail').textContent = user.email;
-        
-        // Ruolo
-        const roleConfig = {
-            'admin': { icon: '👑', label: 'Admin', color: '#8B5CF6' },
-            'user': { icon: '👤', label: 'Utente', color: '#3B82F6' }
-        };
-        const role = roleConfig[user.ruolo] || roleConfig.user;
-        document.getElementById('detailRuolo').innerHTML = `${role.icon} ${role.label}`;
-        document.getElementById('detailRuolo').style.background = `${role.color}22`;
-        document.getElementById('detailRuolo').style.color = role.color;
-        
-        // Status
-        const statusConfig = {
-            'attivo': { color: '#10B981', label: 'Attivo', class: '' },
-            'sospeso': { color: '#F59E0B', label: 'Sospeso', class: 'sospeso' },
-            'bannato': { color: '#EF4444', label: 'Bannato', class: 'bannato' }
-        };
-        const status = statusConfig[user.stato] || statusConfig.attivo;
-        const statusBadge = document.getElementById('detailStatus');
-        statusBadge.classList.remove('sospeso', 'bannato');
-        if (status.class) statusBadge.classList.add(status.class);
-        statusBadge.querySelector('.status-dot-modal').style.background = status.color;
-        statusBadge.querySelector('.status-text-modal').textContent = status.label;
-        
-        // Avatar background
-        document.getElementById('detailAvatar').style.background = `linear-gradient(135deg, ${role.color}, ${role.color}88)`;
-        
-        // Tab Info
-        document.getElementById('infoNomeCompleto').textContent = `${user.nome} ${user.cognome}`;
-        document.getElementById('infoEmail').textContent = user.email || '-';
-        document.getElementById('infoTelefono').textContent = user.telefono || '-';
-        document.getElementById('infoDataNascita').textContent = user.data_nascita ? formatDate(user.data_nascita) : '-';
-        document.getElementById('infoCorso').textContent = user.corso_nome || '-';
-        document.getElementById('infoFacolta').textContent = user.facolta || '-';
-        document.getElementById('infoAnnoIscrizione').textContent = user.anno_iscrizione || '-';
-        document.getElementById('infoRegistrato').textContent = user.created_at ? formatDate(user.created_at) : '-';
-        
-        // Tab Stats
-        document.getElementById('statPrenotazioni').textContent = stats.totale_prenotazioni || 0;
-        document.getElementById('statCompletate').textContent = stats.completate || 0;
-        document.getElementById('statNoShow').textContent = stats.no_show || 0;
-        document.getElementById('statOre').textContent = stats.ore_giocate || 0;
-        document.getElementById('statTornei').textContent = stats.tornei_partecipati || 0;
-        document.getElementById('statVittorie').textContent = stats.tornei_vinti || 0;
-        
-        // Affidabilità
-        const affidabilita = Math.max(0, Math.min(100, 100 - (user.penalty_points || 0) * 5 - (stats.no_show || 0) * 3));
-        document.getElementById('affidabilitaScore').textContent = affidabilita + '%';
-        document.getElementById('affidabilitaBar').style.width = affidabilita + '%';
-        document.getElementById('affidabilitaBar').style.background = affidabilita >= 80 ? '#10B981' : (affidabilita >= 50 ? '#F59E0B' : '#EF4444');
-        document.getElementById('affidabilitaLabel').textContent = affidabilita >= 80 ? 'Eccellente' : (affidabilita >= 50 ? 'Nella media' : 'Da migliorare');
-        
-        // Tab Penalty
-        document.getElementById('penaltyCurrentValue').textContent = user.penalty_points || 0;
-        renderPenaltyLog(data.penalty_log || []);
-        
-        // Tab Segnalazioni
-        renderSegnalazioni(data.segnalazioni_ricevute || [], 'segnalazioniRicevuteList', 'ricevute');
-        renderSegnalazioni(data.segnalazioni_fatte || [], 'segnalazioniFatteList', 'fatte');
-        
-        // Tab Badges
-        renderBadges(data.badges || [], user.xp_points || 0);
-        
-        // Tab Azioni - Aggiorna bottoni in base allo stato
-        updateActionButtons(user);
-        
-        // Sanzioni
-        renderSanzioni(data.sanzioni || []);
-        
-        // Attività recenti
-        renderAttivita(data.attivita_recenti || []);
-    }
+    document.getElementById('selectOrdina').addEventListener('change', function() {
+        currentFilters.ordina = this.value;
+        applyFilters();
+    });
     
-    // ============================================================================
-    // RENDER FUNCTIONS
-    // ============================================================================
-    function formatDate(dateStr) {
-        if (!dateStr) return '-';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
+    // Ricerca
+    const searchInput = document.getElementById('searchUtenti');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentFilters.search = this.value;
+            applyFilters();
+        }, 500);
+    });
     
-    function renderPenaltyLog(logs) {
-        const container = document.getElementById('penaltyLogList');
-        if (!logs.length) {
-            container.innerHTML = '<div class="no-data">Nessuna modifica registrata</div>';
-            return;
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            currentFilters.search = this.value;
+            applyFilters();
         }
-        
-        const motivoLabels = {
-            'no_show': '❌ No-Show',
-            'cancellazione_tardiva': '⏰ Cancellazione tardiva',
-            'segnalazione': '🚩 Segnalazione',
-            'manuale_add': '➕ Aggiunta manuale',
-            'manuale_remove': '➖ Rimozione manuale',
-            'reset': '🔄 Reset'
-        };
-        
-        container.innerHTML = logs.map(log => `
-            <div class="penalty-log-item ${log.punti > 0 ? 'add' : 'remove'}">
-                <div class="penalty-log-icon">${log.punti > 0 ? '➕' : '➖'}</div>
-                <div class="penalty-log-content">
-                    <div class="penalty-log-motivo">${motivoLabels[log.motivo] || log.motivo}</div>
-                    <div class="penalty-log-desc">${log.descrizione || ''}</div>
-                    <div class="penalty-log-date">${formatDate(log.created_at)}</div>
-                </div>
-                <div class="penalty-log-points ${log.punti > 0 ? 'positive' : 'negative'}">${log.punti > 0 ? '+' : ''}${log.punti}</div>
-            </div>
-        `).join('');
-    }
+    });
     
-    function renderSegnalazioni(segnalazioni, containerId, tipo) {
-        const container = document.getElementById(containerId);
-        if (!segnalazioni.length) {
-            container.innerHTML = `<div class="no-data">Nessuna segnalazione ${tipo}</div>`;
-            return;
-        }
-        
-        const tipoIcons = {
-            'no_show': '❌',
-            'comportamento_scorretto': '😠',
-            'linguaggio_offensivo': '🤬',
-            'violenza': '⚠️',
-            'altro': '📝'
-        };
-        
-        const statoColors = {
-            'pending': '#F59E0B',
-            'in_review': '#3B82F6',
-            'resolved': '#10B981',
-            'rejected': '#6B7280'
-        };
-        
-        container.innerHTML = segnalazioni.map(s => `
-            <div class="segnalazione-item">
-                <div class="segnalazione-icon">${tipoIcons[s.tipo] || '📝'}</div>
-                <div class="segnalazione-content">
-                    <div class="segnalazione-tipo">${s.tipo.replace('_', ' ')}</div>
-                    <div class="segnalazione-desc">${s.descrizione?.substring(0, 100) || ''}...</div>
-                    <div class="segnalazione-date">${formatDate(s.created_at)}</div>
-                </div>
-                <div class="segnalazione-stato" style="background: ${statoColors[s.stato] || '#6B7280'}22; color: ${statoColors[s.stato] || '#6B7280'}">
-                    ${s.stato}
-                </div>
-            </div>
-        `).join('');
-    }
+    // Sospendi
+    document.getElementById('btnSospendi').addEventListener('click', function() {
+        bootstrap.Modal.getInstance(document.getElementById('modalDettaglioUtente')).hide();
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalSospensione')).show();
+        }, 300);
+    });
     
-    function renderBadges(badges, xp) {
-        document.getElementById('xpValue').textContent = xp;
-        const container = document.getElementById('badgesGrid');
+    // Riattiva utente sospeso - Apre modal
+    document.getElementById('btnRiattiva').addEventListener('click', function() {
+        // Imposta il nome utente nel modal
+        const userName = document.getElementById('modalUserName').textContent;
+        document.getElementById('riattivaUserName').textContent = userName;
         
-        if (!badges.length) {
-            container.innerHTML = '<div class="no-data">Nessun badge sbloccato</div>';
-            return;
-        }
-        
-        const raritaColors = {
-            'comune': '#9CA3AF',
-            'non_comune': '#10B981',
-            'raro': '#3B82F6',
-            'epico': '#8B5CF6',
-            'leggendario': '#F59E0B'
-        };
-        
-        container.innerHTML = badges.map(b => `
-            <div class="badge-card" style="border-color: ${raritaColors[b.rarita] || '#9CA3AF'}">
-                <div class="badge-icon">${b.icona || '🏅'}</div>
-                <div class="badge-name">${b.nome}</div>
-                <div class="badge-desc">${b.descrizione?.substring(0, 50) || ''}</div>
-                <div class="badge-rarita" style="color: ${raritaColors[b.rarita] || '#9CA3AF'}">${b.rarita}</div>
-            </div>
-        `).join('');
-    }
+        // Chiudi modal dettaglio e apri modal riattiva
+        bootstrap.Modal.getInstance(document.getElementById('modalDettaglioUtente')).hide();
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalRiattiva')).show();
+        }, 300);
+    });
     
-    function renderSanzioni(sanzioni) {
-        const container = document.getElementById('sanzioniList');
-        if (!sanzioni.length) {
-            container.innerHTML = '<div class="no-data">Nessuna sanzione registrata</div>';
-            return;
-        }
-        
-        const tipoConfig = {
-            'warning': { icon: '⚠️', color: '#F59E0B', label: 'Warning' },
-            'sospensione': { icon: '⏸️', color: '#F59E0B', label: 'Sospensione' },
-            'ban': { icon: '🚫', color: '#EF4444', label: 'Ban' }
-        };
-        
-        container.innerHTML = sanzioni.map(s => {
-            const tipo = tipoConfig[s.tipo] || tipoConfig.warning;
-            return `
-                <div class="sanzione-item" style="border-left-color: ${tipo.color}">
-                    <div class="sanzione-icon">${tipo.icon}</div>
-                    <div class="sanzione-content">
-                        <div class="sanzione-tipo">${tipo.label}</div>
-                        <div class="sanzione-motivo">${s.motivo}</div>
-                        <div class="sanzione-date">
-                            ${formatDate(s.data_inizio)}
-                            ${s.data_fine ? ' - ' + formatDate(s.data_fine) : ' (permanente)'}
-                        </div>
-                    </div>
-                    <div class="sanzione-stato ${s.attiva ? 'attiva' : 'conclusa'}">
-                        ${s.attiva ? 'Attiva' : 'Conclusa'}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-    
-    function renderAttivita(attivita) {
-        const container = document.getElementById('activityTimeline');
-        if (!attivita.length) {
-            container.innerHTML = '<div class="no-data">Nessuna attività recente</div>';
-            return;
-        }
-        
-        container.innerHTML = attivita.map(a => `
-            <div class="activity-item">
-                <div class="activity-icon">${a.icona || '📌'}</div>
-                <div class="activity-content">
-                    <div class="activity-text">${a.descrizione}</div>
-                    <div class="activity-date">${formatDate(a.created_at)}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function updateActionButtons(user) {
-        // Ruolo
-        if (user.ruolo === 'admin') {
-            document.getElementById('btnPromuoviAdmin').style.display = 'none';
-            document.getElementById('btnRimuoviAdmin').style.display = 'block';
-        } else {
-            document.getElementById('btnPromuoviAdmin').style.display = 'block';
-            document.getElementById('btnRimuoviAdmin').style.display = 'none';
-        }
-        
-        // Stato
-        if (user.stato === 'sospeso') {
-            document.getElementById('btnSospendi').style.display = 'none';
-            document.getElementById('btnRiabilita').style.display = 'block';
-        } else if (user.stato === 'bannato') {
-            document.getElementById('btnSospendi').style.display = 'none';
-            document.getElementById('btnRiabilita').style.display = 'none';
-            document.getElementById('btnBan').disabled = true;
-            document.getElementById('btnBan').textContent = 'Già Bannato';
-        } else {
-            document.getElementById('btnSospendi').style.display = 'block';
-            document.getElementById('btnRiabilita').style.display = 'none';
-            document.getElementById('btnBan').disabled = false;
-            document.getElementById('btnBan').textContent = 'Banna Utente';
-        }
-    }
-    
-    // ============================================================================
-    // AZIONI UTENTE - Esposto globalmente
-    // ============================================================================
-    window.changeRole = function(nuovoRuolo) {
-        if (!currentUserId) return;
-        
-        const azione = nuovoRuolo === 'admin' ? 'promuovere ad admin' : 'rimuovere i privilegi admin a';
-        if (!confirm(`Sei sicuro di voler ${azione} questo utente?`)) return;
-        
-        const formData = new FormData();
-        formData.append('action', 'change_role');
-        formData.append('user_id', currentUserId);
-        formData.append('ruolo', nuovoRuolo);
-        formData.append('ajax', '1');
-        
-        fetch('gestione-utenti.php', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message || 'Errore', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
-        });
-    };
-    
-    window.showSuspendModal = function() {
-        if (!currentUserId) return;
-        document.getElementById('sospensioneSubtitle').textContent = currentUserData?.user?.nome + ' ' + currentUserData?.user?.cognome;
-        new bootstrap.Modal(document.getElementById('modalSospensione')).show();
-    };
-    
-    window.showBanModal = function() {
-        if (!currentUserId) return;
-        document.getElementById('banSubtitle').textContent = currentUserData?.user?.nome + ' ' + currentUserData?.user?.cognome;
-        document.getElementById('formBan').reset();
-        new bootstrap.Modal(document.getElementById('modalBan')).show();
-    };
-    
-    window.showPenaltyModal = function(action) {
-        if (!currentUserId) return;
-        document.getElementById('penaltyAction').value = action;
-        
-        if (action === 'add') {
-            document.getElementById('penaltyModalIcon').textContent = '➕';
-            document.getElementById('penaltyModalTitle').textContent = 'Aggiungi Penalty';
-            document.getElementById('btnConfirmPenalty').style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-        } else {
-            document.getElementById('penaltyModalIcon').textContent = '➖';
-            document.getElementById('penaltyModalTitle').textContent = 'Rimuovi Penalty';
-            document.getElementById('btnConfirmPenalty').style.background = 'linear-gradient(135deg, #10b981, #059669)';
-        }
-        
-        new bootstrap.Modal(document.getElementById('modalPenalty')).show();
-    };
-    
-    window.resetPenalty = function() {
-        if (!currentUserId) return;
-        if (!confirm('Sei sicuro di voler azzerare tutti i penalty points?')) return;
-        
-        const formData = new FormData();
-        formData.append('action', 'reset_penalty');
-        formData.append('user_id', currentUserId);
-        formData.append('ajax', '1');
-        
-        fetch('gestione-utenti.php', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                loadUserDetail(currentUserId);
-            } else {
-                showToast(data.message || 'Errore', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
-        });
-    };
-    
-    window.reactivateUser = function() {
-        if (!currentUserId) return;
-        if (!confirm('Sei sicuro di voler riabilitare questo utente?')) return;
-        
+    // Conferma riattivazione
+    document.getElementById('btnConfirmRiattiva').addEventListener('click', function() {
         const formData = new FormData();
         formData.append('action', 'reactivate_user');
         formData.append('user_id', currentUserId);
@@ -1252,36 +989,21 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
             if (data.success) {
-                showToast(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalRiattiva')).hide();
                 setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message || 'Errore', 'error');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
         });
-    };
+    });
     
-    window.showMessageModal = function() {
-        if (!currentUserId) return;
-        document.getElementById('messaggioSubtitle').textContent = currentUserData?.user?.nome + ' ' + currentUserData?.user?.cognome;
-        document.getElementById('formMessaggio').reset();
-        new bootstrap.Modal(document.getElementById('modalMessaggio')).show();
-    };
-    
-    // ============================================================================
-    // CONFERME MODAL
-    // ============================================================================
     document.getElementById('btnConfirmSospensione').addEventListener('click', function() {
         const form = document.getElementById('formSospensione');
         const giorni = form.querySelector('[name="giorni"]').value;
         const motivo = form.querySelector('[name="motivo"]').value.trim();
         
-        if (!giorni || !motivo) {
-            showToast('Compila tutti i campi', 'error');
+        if (!motivo) {
+            showToast('Inserisci il motivo', 'error');
             return;
         }
         
@@ -1299,18 +1021,20 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
             if (data.success) {
-                showToast(data.message, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('modalSospensione')).hide();
                 setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message || 'Errore', 'error');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
         });
+    });
+    
+    // Ban
+    document.getElementById('btnBan').addEventListener('click', function() {
+        bootstrap.Modal.getInstance(document.getElementById('modalDettaglioUtente')).hide();
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalBan')).show();
+        }, 300);
     });
     
     document.getElementById('btnConfirmBan').addEventListener('click', function() {
@@ -1336,33 +1060,119 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
             if (data.success) {
-                showToast(data.message, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('modalBan')).hide();
                 setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message || 'Errore', 'error');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
         });
     });
     
+    // Sbanna utente bannato - Apre modal
+    document.getElementById('btnSbanna').addEventListener('click', function() {
+        // Imposta il nome utente nel modal
+        const userName = document.getElementById('modalUserName').textContent;
+        document.getElementById('sbannaUserName').textContent = userName;
+        
+        // Chiudi modal dettaglio e apri modal sbanna
+        bootstrap.Modal.getInstance(document.getElementById('modalDettaglioUtente')).hide();
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalSbanna')).show();
+        }, 300);
+    });
+    
+    // Conferma rimozione ban
+    document.getElementById('btnConfirmSbanna').addEventListener('click', function() {
+        const formData = new FormData();
+        formData.append('action', 'unban_user');
+        formData.append('user_id', currentUserId);
+        formData.append('ajax', '1');
+        
+        fetch('gestione-utenti.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalSbanna')).hide();
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    });
+    
+    // Penalty - Reset (Apre modal)
+    document.getElementById('btnResetPenalty').addEventListener('click', function() {
+        // Se disabilitato, non fare nulla
+        if (this.disabled) return;
+        
+        // Mostra il numero di penalty attuali nel modal
+        document.getElementById('resetCurrentPenalty').textContent = document.getElementById('actionPenaltyCount').textContent;
+        bootstrap.Modal.getInstance(document.getElementById('modalDettaglioUtente')).hide();
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalResetPenalty')).show();
+        }, 300);
+    });
+    
+    // Conferma Reset Penalty
+    document.getElementById('btnConfirmResetPenalty').addEventListener('click', function() {
+        const motivo = document.querySelector('#formResetPenalty [name="motivo"]').value.trim();
+        
+        const formData = new FormData();
+        formData.append('action', 'reset_penalty');
+        formData.append('user_id', currentUserId);
+        formData.append('motivo', motivo);
+        formData.append('ajax', '1');
+        
+        fetch('gestione-utenti.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalResetPenalty')).hide();
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    });
+    
+    // Penalty - Aggiungi (Apre modal)
+    document.getElementById('btnAddPenalty').addEventListener('click', function() {
+        // Mostra il numero di penalty attuali nel modal
+        document.getElementById('addCurrentPenalty').textContent = document.getElementById('actionPenaltyCount').textContent;
+        document.getElementById('penaltyAction').value = 'add';
+        // Reset form
+        document.querySelector('#formPenalty [name="punti"]').value = 1;
+        document.querySelector('#formPenalty [name="descrizione"]').value = '';
+        bootstrap.Modal.getInstance(document.getElementById('modalDettaglioUtente')).hide();
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalPenalty')).show();
+        }, 300);
+    });
+    
+    // Conferma Aggiungi Penalty
     document.getElementById('btnConfirmPenalty').addEventListener('click', function() {
         const form = document.getElementById('formPenalty');
-        const action = document.getElementById('penaltyAction').value;
         const punti = form.querySelector('[name="punti"]').value;
         const descrizione = form.querySelector('[name="descrizione"]').value.trim();
         
-        if (!punti) {
-            showToast('Inserisci il numero di punti', 'error');
+        if (!punti || punti < 1) {
+            showToast('Inserisci un numero valido', 'error');
+            return;
+        }
+        
+        if (!descrizione) {
+            showToast('Inserisci il motivo', 'error');
             return;
         }
         
         const formData = new FormData();
-        formData.append('action', action === 'add' ? 'add_penalty' : 'remove_penalty');
+        formData.append('action', 'add_penalty');
         formData.append('user_id', currentUserId);
         formData.append('punti', punti);
         formData.append('descrizione', descrizione);
@@ -1375,80 +1185,12 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
             if (data.success) {
-                showToast(data.message, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('modalPenalty')).hide();
-                loadUserDetail(currentUserId);
-            } else {
-                showToast(data.message || 'Errore', 'error');
+                setTimeout(() => location.reload(), 1000);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
         });
     });
-    
-    document.getElementById('btnConfirmMessaggio').addEventListener('click', function() {
-        const form = document.getElementById('formMessaggio');
-        const oggetto = form.querySelector('[name="oggetto"]').value.trim();
-        const messaggio = form.querySelector('[name="messaggio"]').value.trim();
-        const tipoInvio = form.querySelector('[name="tipo_invio"]').value;
-        
-        if (!oggetto || !messaggio) {
-            showToast('Compila tutti i campi', 'error');
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('action', 'send_message');
-        formData.append('user_id', currentUserId);
-        formData.append('oggetto', oggetto);
-        formData.append('messaggio', messaggio);
-        formData.append('tipo_invio', tipoInvio);
-        formData.append('ajax', '1');
-        
-        fetch('gestione-utenti.php', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('modalMessaggio')).hide();
-            } else {
-                showToast(data.message || 'Errore', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Errore di connessione', 'error');
-        });
-    });
-    
-    // ============================================================================
-    // RICERCA CON INVIO
-    // ============================================================================
-    document.querySelector('.filter-input-search').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            document.getElementById('filtersForm').submit();
-        }
-    });
-    
-    // ============================================================================
-    // FIX MODAL - Sposta i modal nel body
-    // ============================================================================
-    const modalsToMove = ['modalDettaglioUtente', 'modalSospensione', 'modalBan', 'modalPenalty', 'modalMessaggio'];
-    modalsToMove.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (modal && modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
-        }
-    });
-    
 });
 </script>
-
-<?php include 'footer.php'; ?>
