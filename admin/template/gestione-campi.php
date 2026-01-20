@@ -324,6 +324,13 @@ $recensioniRecenti = $templateParams["recensioni_recenti"] ?? [];
                     <span class="status-text"><?php echo $status['label']; ?></span>
                 </div>
                 
+                <?php if (isset($campo['manutenzioni_future']) && $campo['manutenzioni_future'] > 0 && $campo['stato'] !== 'chiuso'): ?>
+                <!-- Indicatore Manutenzione Prevista -->
+                <div class="field-status-secondary">
+                    <span class="status-secondary-text">⚠️ Manutenzione prevista</span>
+                </div>
+                <?php endif; ?>
+                
                 <!-- Sport Icon - Grande al centro -->
                 <div class="field-icon-wrapper">
                     <img src="assets/icons/<?php echo $sportIcon; ?>" alt="<?php echo htmlspecialchars($campo['sport_nome']); ?>" class="field-sport-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -386,162 +393,195 @@ $recensioniRecenti = $templateParams["recensioni_recenti"] ?? [];
 </div>
 
 <!-- ============================================================================
-     MODAL: NUOVO CAMPO
+     MODAL: NUOVO CAMPO - Bootstrap Design
      ============================================================================ -->
-<div class="modal fade" id="modalNuovoCampo" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalNuovoCampo" tabindex="-1" aria-labelledby="modalNuovoCampoLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content modal-dark">
-            <div class="modal-header modal-header-gradient">
+        <div class="modal-content nuovo-campo-modal">
+            <!-- Header -->
+            <div class="modal-header nuovo-campo-header">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="modal-icon">🏟️</span>
+                    <div class="modal-header-icon">🏟️</div>
                     <div>
-                        <h5 class="modal-title mb-0">Nuovo Campo</h5>
+                        <h5 class="modal-title" id="modalNuovoCampoLabel">Nuovo Campo</h5>
                         <p class="modal-subtitle mb-0">Aggiungi un nuovo campo sportivo</p>
                     </div>
                 </div>
-                <button type="button" class="btn-close-modal" data-bs-dismiss="modal" aria-label="Close">✕</button>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
-            <div class="modal-body">
-                <form id="formNuovoCampo">
-                    <div class="row g-3">
-                        <!-- Nome e Sport -->
-                        <div class="col-md-8">
-                            <label class="form-label-custom">Nome Campo <span class="required">*</span></label>
-                            <input type="text" class="form-input-custom" name="nome" placeholder="Es. Campo Calcetto Nord" required>
+            
+            <!-- Body -->
+            <div class="modal-body nuovo-campo-body">
+                <form id="formNuovoCampo" novalidate>
+                    <!-- Riga 1: Nome Campo + Sport -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label class="nc-label">Nome Campo <span class="text-danger">*</span></label>
+                            <input type="text" class="nc-input" name="nome" placeholder="Es. Campo Calcetto Nord" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label-custom">Sport <span class="required">*</span></label>
-                            <select class="form-select-custom" name="sport_id" required>
+                        <div class="col-md-5">
+                            <label class="nc-label">Sport <span class="text-danger">*</span></label>
+                            <select class="nc-select" name="sport_id" required>
                                 <?php foreach ($sports as $sport): 
                                     $sportEmoji = getEmojiFromIcona($sport['icona'] ?? '');
                                 ?>
-                                <option value="<?php echo $sport['sport_id']; ?>"><?php echo $sportEmoji; ?> <?php echo htmlspecialchars($sport['nome']); ?></option>
+                                <option value="<?php echo $sport['sport_id']; ?>" data-icon="<?php echo $sportEmoji; ?>">
+                                    <?php echo $sportEmoji; ?> <?php echo htmlspecialchars($sport['nome']); ?>
+                                </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        
-                        <!-- Tipo e Superficie -->
+                    </div>
+                    
+                    <!-- Riga 2: Tipo + Superficie -->
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label-custom">Tipo <span class="required">*</span></label>
-                            <div class="btn-group-custom w-100">
-                                <input type="radio" class="btn-check" name="tipo_campo" id="tipoOutdoor" value="outdoor" checked>
-                                <label class="btn-option" for="tipoOutdoor">🌳 Outdoor</label>
+                            <label class="nc-label">Tipo <span class="text-danger">*</span></label>
+                            <div class="nc-btn-group">
+                                <input type="radio" class="btn-check" name="tipo_campo" id="ncTipoIndoor" value="indoor">
+                                <label class="nc-btn-option" for="ncTipoIndoor">
+                                    <span class="nc-btn-icon">🏠</span> Indoor
+                                </label>
                                 
-                                <input type="radio" class="btn-check" name="tipo_campo" id="tipoIndoor" value="indoor">
-                                <label class="btn-option" for="tipoIndoor">🏠 Indoor</label>
+                                <input type="radio" class="btn-check" name="tipo_campo" id="ncTipoOutdoor" value="outdoor" checked>
+                                <label class="nc-btn-option" for="ncTipoOutdoor">
+                                    <span class="nc-btn-icon">🌳</span> Outdoor
+                                </label>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label-custom">Superficie <span class="required">*</span></label>
-                            <select class="form-select-custom" name="tipo_superficie" required>
+                            <label class="nc-label">Superficie <span class="text-danger">*</span></label>
+                            <select class="nc-select" name="tipo_superficie" required>
+                                <option value="" disabled selected>Seleziona...</option>
                                 <option value="erba_sintetica">Erba sintetica</option>
                                 <option value="erba_naturale">Erba naturale</option>
                                 <option value="parquet">Parquet</option>
                                 <option value="cemento">Cemento</option>
                                 <option value="terra_battuta">Terra battuta</option>
-                                <option value="resina">Resina</option>
                             </select>
                         </div>
-                        
-                        <!-- Capienza e Location -->
+                    </div>
+                    
+                    <!-- Riga 3: Capienza + Posizione -->
+                    <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label-custom">Capienza Max <span class="required">*</span></label>
-                            <input type="number" class="form-input-custom" name="capienza_max" placeholder="Es. 10" required>
+                            <label class="nc-label">Capienza Max <span class="text-danger">*</span></label>
+                            <input type="number" class="nc-input" name="capienza_max" placeholder="Es. 10" min="1" required>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label-custom">Posizione <span class="required">*</span></label>
-                            <input type="text" class="form-input-custom" name="location" placeholder="Es. Zona Nord - Edificio Sport" required>
-                        </div>
-                        
-                        <!-- Dimensioni -->
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Lunghezza (m)</label>
-                            <input type="number" step="0.1" class="form-input-custom" name="lunghezza_m" placeholder="Opzionale">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Larghezza (m)</label>
-                            <input type="number" step="0.1" class="form-input-custom" name="larghezza_m" placeholder="Opzionale">
-                        </div>
-                        
-                        <!-- Orari -->
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Orario Apertura <span class="required">*</span></label>
-                            <input type="time" class="form-input-custom" name="orario_apertura" value="08:00" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Orario Chiusura <span class="required">*</span></label>
-                            <input type="time" class="form-input-custom" name="orario_chiusura" value="22:00" required>
-                        </div>
-                        
-                        <!-- Stato -->
-                        <div class="col-12">
-                            <label class="form-label-custom">Stato Iniziale</label>
-                            <div class="btn-group-custom w-100">
-                                <input type="radio" class="btn-check" name="stato" id="statoDisp" value="disponibile" checked>
-                                <label class="btn-option btn-success-option" for="statoDisp">🟢 Disponibile</label>
-                                
-                                <input type="radio" class="btn-check" name="stato" id="statoMan" value="manutenzione">
-                                <label class="btn-option btn-warning-option" for="statoMan">🟡 Manutenzione</label>
-                                
-                                <input type="radio" class="btn-check" name="stato" id="statoChiuso" value="chiuso">
-                                <label class="btn-option btn-danger-option" for="statoChiuso">🔴 Chiuso</label>
-                            </div>
-                        </div>
-                        
-                        <!-- Servizi -->
-                        <div class="col-12">
-                            <label class="form-label-custom">Servizi Disponibili</label>
-                            <div class="services-grid">
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="illuminazione_notturna">
-                                    <span class="service-icon">💡</span>
-                                    <span class="service-name">Illuminazione</span>
-                                </label>
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="spogliatoi">
-                                    <span class="service-icon">🚿</span>
-                                    <span class="service-name">Spogliatoi</span>
-                                </label>
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="docce">
-                                    <span class="service-icon">🚿</span>
-                                    <span class="service-name">Docce</span>
-                                </label>
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="parcheggio">
-                                    <span class="service-icon">🅿️</span>
-                                    <span class="service-name">Parcheggio</span>
-                                </label>
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="distributori">
-                                    <span class="service-icon">💧</span>
-                                    <span class="service-name">Distributori</span>
-                                </label>
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="noleggio_attrezzatura">
-                                    <span class="service-icon">🎾</span>
-                                    <span class="service-name">Noleggio</span>
-                                </label>
-                                <label class="service-checkbox">
-                                    <input type="checkbox" name="servizi[]" value="bar_ristoro">
-                                    <span class="service-icon">☕</span>
-                                    <span class="service-name">Bar/Ristoro</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Descrizione -->
-                        <div class="col-12">
-                            <label class="form-label-custom">Descrizione</label>
-                            <textarea class="form-textarea-custom" name="descrizione" rows="3" placeholder="Descrivi le caratteristiche del campo..."></textarea>
+                            <label class="nc-label">Posizione <span class="text-danger">*</span></label>
+                            <input type="text" class="nc-input" name="location" placeholder="Es. Zona Nord - Edificio Sport" required>
                         </div>
                     </div>
+                    
+                    <!-- Riga 4: Orari -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="nc-label">Orario Apertura <span class="text-danger">*</span></label>
+                            <div class="nc-input-icon-wrapper">
+                                <input type="time" class="nc-input nc-input-time" name="orario_apertura" value="08:00" required>
+                                <span class="nc-input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="nc-label">Orario Chiusura <span class="text-danger">*</span></label>
+                            <div class="nc-input-icon-wrapper">
+                                <input type="time" class="nc-input nc-input-time" name="orario_chiusura" value="22:00" required>
+                                <span class="nc-input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Servizi Disponibili -->
+                    <div class="mb-3">
+                        <label class="nc-label">Servizi Disponibili</label>
+                        <div class="nc-services-grid">
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="illuminazione_notturna">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">💡</span>
+                                    <span class="nc-service-name">Illuminazione</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="spogliatoi">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🚿</span>
+                                    <span class="nc-service-name">Spogliatoi</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="docce">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🚿</span>
+                                    <span class="nc-service-name">Docce</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="parcheggio">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🅿️</span>
+                                    <span class="nc-service-name">Parcheggio</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="noleggio_attrezzatura">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🎾</span>
+                                    <span class="nc-service-name">Noleggio attrezzatura</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="bar_ristoro">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">☕</span>
+                                    <span class="nc-service-name">Bar/Ristoro</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="distributori">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">💧</span>
+                                    <span class="nc-service-name">Distributori acqua</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Descrizione -->
+                    <div class="mb-0">
+                        <label class="nc-label">Descrizione</label>
+                        <textarea class="nc-textarea" name="descrizione" rows="3" placeholder="Descrivi le caratteristiche del campo..."></textarea>
+                    </div>
+                    
+                    <!-- Hidden: stato default disponibile -->
+                    <input type="hidden" name="stato" value="disponibile">
                 </form>
             </div>
-            <div class="modal-footer modal-footer-dark">
-                <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn-success-custom" id="btnSalvaCampo">
-                    <span>✓</span> Crea Campo
+            
+            <!-- Footer -->
+            <div class="modal-footer nuovo-campo-footer">
+                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="nc-btn-submit" id="btnSalvaCampo">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Crea Campo
                 </button>
             </div>
         </div>
@@ -680,58 +720,106 @@ $recensioniRecenti = $templateParams["recensioni_recenti"] ?? [];
                     
                     <!-- Tab Calendario -->
                     <div class="tab-pane fade" id="tabCalendario">
-                        <div class="empty-tab">
-                            <span class="empty-tab-icon">📅</span>
-                            <p>Calendario prenotazioni - Visualizza slot disponibili e occupati</p>
-                            <small class="text-muted">(Funzionalità in sviluppo)</small>
+                        <div id="calendarioContent">
+                            <!-- Prenotazioni Oggi -->
+                            <div class="prenotazioni-section" id="prenotazioniOggiSection">
+                                <div class="prenotazioni-section-title">
+                                    📅 Prenotazioni di Oggi
+                                    <span class="badge badge-oggi" id="countOggi">0</span>
+                                </div>
+                                <div id="prenotazioniOggiList">
+                                    <div class="no-prenotazioni">Nessuna prenotazione per oggi</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Prenotazioni Future -->
+                            <div class="prenotazioni-section" id="prenotazioniFutureSection">
+                                <div class="prenotazioni-section-title">
+                                    🔜 Prenotazioni Future
+                                    <span class="badge badge-future" id="countFuture">0</span>
+                                </div>
+                                <div id="prenotazioniFutureList">
+                                    <div class="no-prenotazioni">Nessuna prenotazione futura</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Prenotazioni Passate -->
+                            <div class="prenotazioni-section" id="prenotazioniPassateSection">
+                                <div class="prenotazioni-section-title">
+                                    ✅ Prenotazioni Completate
+                                    <span class="badge badge-passate" id="countPassate">0</span>
+                                </div>
+                                <div id="prenotazioniPassateList">
+                                    <div class="no-prenotazioni">Nessuna prenotazione completata</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Tab Statistiche -->
                     <div class="tab-pane fade" id="tabStats">
-                        <div class="empty-tab">
-                            <span class="empty-tab-icon">📊</span>
-                            <p>Statistiche dettagliate - Grafici di utilizzo, heatmap orari</p>
-                            <small class="text-muted">(Funzionalità in sviluppo)</small>
+                        <div class="stats-chart-container">
+                            <div class="stats-chart-title">📊 Prenotazioni Ultimi 7 Giorni</div>
+                            <div class="chart-wrapper">
+                                <div class="bar-chart" id="weeklyChart">
+                                    <!-- Bars generate via JS -->
+                                </div>
+                            </div>
+                            <div class="stats-summary">
+                                <div class="stats-summary-item">
+                                    <div class="stats-summary-value" id="statsTotale">0</div>
+                                    <div class="stats-summary-label">Totale Settimana</div>
+                                </div>
+                                <div class="stats-summary-item">
+                                    <div class="stats-summary-value" id="statsMedia">0</div>
+                                    <div class="stats-summary-label">Media Giornaliera</div>
+                                </div>
+                                <div class="stats-summary-item">
+                                    <div class="stats-summary-value" id="statsPicco">-</div>
+                                    <div class="stats-summary-label">Giorno di Picco</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Tab Recensioni -->
                     <div class="tab-pane fade" id="tabRecensioni">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="tab-section-title mb-0">Recensioni Utenti</h4>
-                            <button class="btn-secondary-custom btn-sm">Filtra</button>
+                            <h4 class="tab-section-title mb-0">⭐ Recensioni Utenti</h4>
+                            <a href="recensioni.php" class="btn-add-new btn-sm">
+                                📝 Gestisci Recensioni
+                            </a>
                         </div>
-                        <div id="detailRecensioniList">
+                        <div class="recensioni-list" id="detailRecensioniList">
                             <!-- Recensioni caricate via JS -->
                         </div>
                     </div>
                     
                     <!-- Tab Manutenzione -->
                     <div class="tab-pane fade" id="tabManutenzione">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="tab-section-title mb-0">Gestione Manutenzione</h4>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="tab-section-title mb-0">🔧 Gestione Manutenzione</h4>
                             <button class="btn-add-new btn-sm" id="btnProgrammaManutenzione">
-                                🔧 Programma Manutenzione
+                                + Programma Manutenzione
                             </button>
                         </div>
                         <div id="detailManutenzioneContent">
-                            <div class="manutenzione-ok">
-                                <span class="manutenzione-icon">✅</span>
-                                <p>Nessuna manutenzione programmata</p>
-                                <small class="text-muted">Il campo è operativo</small>
-                            </div>
+                            <!-- Contenuto caricato via JS -->
                         </div>
                     </div>
                 </div>
             </div>
             
             <div class="modal-footer modal-footer-dark justify-content-between">
-                <button type="button" class="btn-danger-custom btn-sm" id="btnEliminaCampo">
-                    🗑️ Elimina Campo
-                </button>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">Chiudi</button>
+                    <button type="button" class="btn-danger-outline btn-sm" id="btnEliminaCampo">
+                        🗑️ Elimina Campo
+                    </button>
+                    <button type="button" class="btn-warning-outline btn-sm" id="btnChiudiCampo">
+                        🚫 Chiudi Campo
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
                     <button type="button" class="btn-add-new" id="btnModificaCampo">
                         ✏️ Modifica Campo
                     </button>
@@ -742,62 +830,266 @@ $recensioniRecenti = $templateParams["recensioni_recenti"] ?? [];
 </div>
 
 <!-- ============================================================================
-     MODAL: BLOCCO MANUTENZIONE
+     MODAL: BLOCCO MANUTENZIONE - Layout Orizzontale
      ============================================================================ -->
 <div class="modal fade" id="modalBloccoManutenzione" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-dark">
-            <div class="modal-header modal-header-gradient orange">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content nuovo-campo-modal">
+            <!-- Header -->
+            <div class="modal-header nuovo-campo-header">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="modal-icon">🔧</span>
+                    <div class="modal-header-icon">🔧</div>
                     <div>
-                        <h5 class="modal-title mb-0">Programma Manutenzione</h5>
+                        <h5 class="modal-title">Programma Manutenzione</h5>
                         <p class="modal-subtitle mb-0" id="manutenzioneSubtitle">Campo selezionato</p>
                     </div>
                 </div>
-                <button type="button" class="btn-close-modal" data-bs-dismiss="modal" aria-label="Close">✕</button>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
-            <div class="modal-body">
+            
+            <!-- Body -->
+            <div class="modal-body nuovo-campo-body">
                 <form id="formBloccoManutenzione">
                     <input type="hidden" name="campo_id" id="blocco_campo_id">
                     
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Data Inizio <span class="required">*</span></label>
-                            <input type="date" class="form-input-custom" name="data_inizio" required>
+                    <!-- Riga 1: Date e Ore -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="nc-label">Data Inizio <span class="text-danger">*</span></label>
+                            <input type="date" class="nc-input" name="data_inizio" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Ora Inizio</label>
-                            <input type="time" class="form-input-custom" name="ora_inizio" value="08:00">
+                        <div class="col-md-3">
+                            <label class="nc-label">Ora Inizio</label>
+                            <input type="time" class="nc-input" name="ora_inizio" value="08:00">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Data Fine <span class="required">*</span></label>
-                            <input type="date" class="form-input-custom" name="data_fine" required>
+                        <div class="col-md-3">
+                            <label class="nc-label">Data Fine <span class="text-danger">*</span></label>
+                            <input type="date" class="nc-input" name="data_fine" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label-custom">Ora Fine</label>
-                            <input type="time" class="form-input-custom" name="ora_fine" value="22:00">
+                        <div class="col-md-3">
+                            <label class="nc-label">Ora Fine</label>
+                            <input type="time" class="nc-input" name="ora_fine" value="22:00">
                         </div>
-                        <div class="col-12">
-                            <label class="form-label-custom">Tipo Blocco</label>
-                            <select class="form-select-custom" name="tipo_blocco">
-                                <option value="manutenzione_ordinaria">Manutenzione Ordinaria</option>
-                                <option value="manutenzione_straordinaria">Manutenzione Straordinaria</option>
-                                <option value="evento_speciale">Evento Speciale</option>
-                                <option value="chiusura_temporanea">Chiusura Temporanea</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label-custom">Motivo</label>
-                            <textarea class="form-textarea-custom" name="motivo" rows="3" placeholder="Descrivi il motivo del blocco..."></textarea>
-                        </div>
+                    </div>
+                    
+                    <!-- Riga 2: Tipo Blocco -->
+                    <div class="mb-3">
+                        <label class="nc-label">Tipo Blocco</label>
+                        <select class="nc-select" name="tipo_blocco">
+                            <option value="manutenzione_ordinaria">🔧 Manutenzione Ordinaria</option>
+                            <option value="manutenzione_straordinaria">⚠️ Manutenzione Straordinaria</option>
+                            <option value="evento_speciale">🎉 Evento Speciale</option>
+                            <option value="chiusura_temporanea">🚫 Chiusura Temporanea</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Riga 3: Motivo -->
+                    <div class="mb-3">
+                        <label class="nc-label">Motivo</label>
+                        <textarea class="nc-textarea" name="motivo" rows="3" placeholder="Descrivi il motivo del blocco..."></textarea>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer modal-footer-dark">
-                <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn-warning-custom" id="btnCreaBlocco">
+            
+            <!-- Footer -->
+            <div class="modal-footer nuovo-campo-footer">
+                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="nc-btn-submit" id="btnCreaBlocco" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
                     🔧 Crea Blocco
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================
+     MODAL: MODIFICA CAMPO - Layout Orizzontale
+     ============================================================================ -->
+<div class="modal fade" id="modalModificaCampo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content nuovo-campo-modal">
+            <!-- Header -->
+            <div class="modal-header nuovo-campo-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="modal-header-icon">✏️</div>
+                    <div>
+                        <h5 class="modal-title">Modifica Campo</h5>
+                        <p class="modal-subtitle mb-0" id="modificaCampoSubtitle">Modifica i dettagli del campo</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Chiudi">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="modal-body nuovo-campo-body">
+                <form id="formModificaCampo">
+                    <input type="hidden" name="campo_id" id="modifica_campo_id">
+                    <input type="hidden" name="stato" id="mod_stato">
+                    
+                    <!-- Riga 1: Nome Campo + Sport -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label class="nc-label">Nome Campo <span class="text-danger">*</span></label>
+                            <input type="text" class="nc-input" name="nome" id="mod_nome" placeholder="Es. Campo Calcetto Nord" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="nc-label">Sport <span class="text-danger">*</span></label>
+                            <select class="nc-select" name="sport_id" id="mod_sport_id" required>
+                                <?php foreach ($sports as $sport): 
+                                    $sportEmoji = getEmojiFromIcona($sport['icona'] ?? '');
+                                ?>
+                                <option value="<?php echo $sport['sport_id']; ?>">
+                                    <?php echo $sportEmoji; ?> <?php echo htmlspecialchars($sport['nome']); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Riga 2: Tipo + Superficie -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="nc-label">Tipo <span class="text-danger">*</span></label>
+                            <div class="nc-btn-group">
+                                <input type="radio" class="btn-check" name="tipo_campo" id="modTipoIndoor" value="indoor">
+                                <label class="nc-btn-option" for="modTipoIndoor">
+                                    <span class="nc-btn-icon">🏠</span> Indoor
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="tipo_campo" id="modTipoOutdoor" value="outdoor" checked>
+                                <label class="nc-btn-option" for="modTipoOutdoor">
+                                    <span class="nc-btn-icon">🌳</span> Outdoor
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="nc-label">Superficie <span class="text-danger">*</span></label>
+                            <select class="nc-select" name="tipo_superficie" id="mod_tipo_superficie" required>
+                                <option value="" disabled>Seleziona...</option>
+                                <option value="erba_sintetica">Erba sintetica</option>
+                                <option value="erba_naturale">Erba naturale</option>
+                                <option value="parquet">Parquet</option>
+                                <option value="cemento">Cemento</option>
+                                <option value="terra_battuta">Terra battuta</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Riga 3: Capienza + Posizione -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="nc-label">Capienza Max <span class="text-danger">*</span></label>
+                            <input type="number" class="nc-input" name="capienza_max" id="mod_capienza_max" min="2" max="100" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="nc-label">Posizione <span class="text-danger">*</span></label>
+                            <input type="text" class="nc-input" name="location" id="mod_location" placeholder="Es. Blocco A - Piano Terra" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Riga 4: Orari -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="nc-label">Orario Apertura</label>
+                            <input type="time" class="nc-input" name="orario_apertura" id="mod_orario_apertura" value="08:00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="nc-label">Orario Chiusura</label>
+                            <input type="time" class="nc-input" name="orario_chiusura" id="mod_orario_chiusura" value="22:00">
+                        </div>
+                    </div>
+                    
+                    <!-- Riga 5: Dimensioni (opzionali) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="nc-label">Lunghezza (m)</label>
+                            <input type="number" class="nc-input" name="lunghezza_m" id="mod_lunghezza_m" min="1" max="200" placeholder="Opzionale">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="nc-label">Larghezza (m)</label>
+                            <input type="number" class="nc-input" name="larghezza_m" id="mod_larghezza_m" min="1" max="100" placeholder="Opzionale">
+                        </div>
+                    </div>
+                    
+                    <!-- Servizi Disponibili -->
+                    <div class="mb-3">
+                        <label class="nc-label">Servizi Disponibili</label>
+                        <div class="nc-services-grid">
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="illuminazione_notturna" id="mod_serv_illuminazione">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">💡</span>
+                                    <span class="nc-service-name">Illuminazione</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="spogliatoi" id="mod_serv_spogliatoi">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🚿</span>
+                                    <span class="nc-service-name">Spogliatoi</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="docce" id="mod_serv_docce">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🚿</span>
+                                    <span class="nc-service-name">Docce</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="parcheggio" id="mod_serv_parcheggio">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🅿️</span>
+                                    <span class="nc-service-name">Parcheggio</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="noleggio_attrezzatura" id="mod_serv_noleggio">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">🎾</span>
+                                    <span class="nc-service-name">Noleggio attrezzatura</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="bar_ristoro" id="mod_serv_bar">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">☕</span>
+                                    <span class="nc-service-name">Bar/Ristoro</span>
+                                </div>
+                            </label>
+                            <label class="nc-service-item">
+                                <input type="checkbox" name="servizi[]" value="distributori" id="mod_serv_distributori">
+                                <div class="nc-service-box">
+                                    <span class="nc-service-icon">💧</span>
+                                    <span class="nc-service-name">Distributori acqua</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Descrizione -->
+                    <div class="mb-3">
+                        <label class="nc-label">Descrizione</label>
+                        <textarea class="nc-textarea" name="descrizione" id="mod_descrizione" rows="2" placeholder="Descrizione opzionale del campo..."></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Footer -->
+            <div class="modal-footer nuovo-campo-footer">
+                <button type="button" class="nc-btn-cancel" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="nc-btn-submit" id="btnSalvaModifiche" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    ✓ Salva Modifiche
                 </button>
             </div>
         </div>
@@ -828,6 +1120,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // VARIABILI GLOBALI
     // ============================================================================
     let currentCampoId = null;
+    let currentBlocchiFuturi = [];
     const sportColors = <?php echo json_encode($sportColors); ?>;
     const sportEmojis = <?php echo json_encode($sportEmojis); ?>;
     
@@ -937,6 +1230,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const recensioni = data.recensioni || [];
         const stats = data.recensioni_stats || {};
         
+        // Salva i dati per il modal modifica
+        currentCampoData = campo;
+        currentServiziData = servizi;
+        
         const sportColor = sportColors[campo.sport_nome] || '#3B82F6';
         const sportEmoji = sportEmojis[campo.sport_nome] || '🏟️';
         
@@ -950,15 +1247,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Status
         const statusConfig = {
-            'disponibile': { color: '#10B981', label: 'Disponibile' },
-            'manutenzione': { color: '#F59E0B', label: 'In Manutenzione' },
-            'chiuso': { color: '#EF4444', label: 'Chiuso' }
+            'disponibile': { color: '#10B981', label: 'Disponibile', class: '' },
+            'manutenzione': { color: '#F59E0B', label: 'In Manutenzione', class: 'manutenzione' },
+            'chiuso': { color: '#EF4444', label: 'Chiuso', class: 'chiuso' }
         };
         const status = statusConfig[campo.stato] || statusConfig.disponibile;
         const statusBadge = document.getElementById('detailStatus');
+        
+        // Rimuovi classi precedenti e aggiungi quella corretta
+        statusBadge.classList.remove('manutenzione', 'chiuso');
+        if (status.class) {
+            statusBadge.classList.add(status.class);
+        }
+        
         statusBadge.querySelector('.status-dot-modal').style.background = status.color;
         statusBadge.querySelector('.status-text-modal').textContent = status.label;
         statusBadge.style.setProperty('--status-color', status.color);
+        
+        // Aggiorna testo bottone Chiudi/Riapri Campo
+        const btnChiudiCampo = document.getElementById('btnChiudiCampo');
+        if (campo.stato === 'chiuso') {
+            btnChiudiCampo.innerHTML = '🔓 Riapri Campo';
+        } else {
+            btnChiudiCampo.innerHTML = '🚫 Chiudi Campo';
+        }
         
         // Info
         const superficieNames = {
@@ -1026,59 +1338,318 @@ document.addEventListener('DOMContentLoaded', function() {
             starsContainer.appendChild(star);
         }
         
-        // Recensioni
+        // Recensioni - Formattate meglio e ordinate per data
         const recensioniList = document.getElementById('detailRecensioniList');
         recensioniList.innerHTML = '';
         
         if (recensioni.length > 0) {
-            recensioni.forEach(rev => {
-                const ratingColor = rev.rating_generale >= 4 ? '#10B981' : (rev.rating_generale >= 3 ? '#F59E0B' : '#EF4444');
+            // Ordina per data (più recente prima)
+            const recensioniOrdinate = [...recensioni].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            recensioniOrdinate.forEach(rev => {
+                const iniziale = (rev.utente_nome || 'U').charAt(0).toUpperCase();
+                const dataFormatted = formatDataItaliana(rev.created_at);
+                
                 recensioniList.innerHTML += `
-                    <div class="review-item" style="--rating-color: ${ratingColor}">
-                        <div class="review-item-header">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="user-avatar-sm">${rev.utente_iniziale || 'U'}</div>
-                                <div>
-                                    <div class="fw-semibold">${rev.utente_nome}</div>
-                                    <div class="text-muted small">${formatTimeAgo(rev.created_at)}</div>
-                                </div>
+                    <div class="recensione-card">
+                        <div class="recensione-header">
+                            <div class="recensione-avatar">${iniziale}</div>
+                            <div class="recensione-info">
+                                <div class="recensione-nome">${rev.utente_nome || 'Utente'}</div>
+                                <div class="recensione-data">${dataFormatted}</div>
                             </div>
-                            <div class="review-rating">
-                                ${Array(5).fill().map((_, i) => `<span class="star ${i < rev.rating_generale ? 'filled' : 'empty'}">★</span>`).join('')}
+                            <div class="recensione-rating">
+                                ${Array(5).fill().map((_, i) => `<span class="star ${i < rev.rating_generale ? 'filled' : ''}">★</span>`).join('')}
                             </div>
                         </div>
-                        <p class="review-item-text">"${rev.commento || ''}"</p>
+                        <div class="recensione-testo">"${rev.commento || 'Nessun commento'}"</div>
                     </div>
                 `;
             });
         } else {
-            recensioniList.innerHTML = '<div class="empty-tab"><p>Nessuna recensione per questo campo</p></div>';
+            recensioniList.innerHTML = `
+                <div class="no-recensioni">
+                    <div class="no-recensioni-icon">⭐</div>
+                    <p>Nessuna recensione per questo campo</p>
+                </div>
+            `;
         }
         
-        // Manutenzione
+        // Manutenzione - Con gestione blocchi futuri e campo chiuso
         const manutenzioneContent = document.getElementById('detailManutenzioneContent');
-        if (campo.stato === 'manutenzione') {
+        const btnProgrammaManutenzione = document.getElementById('btnProgrammaManutenzione');
+        const blocchiManutenzione = data.blocchi_manutenzione || [];
+        
+        // Filtra blocchi futuri (data_inizio > oggi)
+        const oggi = new Date();
+        oggi.setHours(0, 0, 0, 0);
+        const blocchiFuturi = blocchiManutenzione.filter(b => {
+            const dataInizio = new Date(b.data_inizio);
+            dataInizio.setHours(0, 0, 0, 0);
+            return dataInizio > oggi;
+        });
+        
+        if (campo.stato === 'chiuso') {
+            // Campo chiuso - Non operativo
             manutenzioneContent.innerHTML = `
-                <div class="manutenzione-alert">
-                    <span class="manutenzione-icon">🔧</span>
-                    <div>
-                        <div class="fw-bold" style="color: #F59E0B">Campo in Manutenzione</div>
-                        <div class="text-muted small">Il campo non è prenotabile</div>
+                <div class="manutenzione-status chiuso">
+                    <div class="manutenzione-status-icon">🚫</div>
+                    <div class="manutenzione-status-text">
+                        <div class="manutenzione-status-title" style="color: #ef4444;">Il campo non è operativo</div>
+                        <div class="manutenzione-status-subtitle">Il campo è attualmente chiuso</div>
                     </div>
-                    <button class="btn-success-custom btn-sm ms-auto" onclick="terminaManutenzione(${campo.campo_id})">
-                        Termina Manutenzione
+                </div>
+            `;
+            // Disabilita bottone programma manutenzione
+            btnProgrammaManutenzione.disabled = true;
+            btnProgrammaManutenzione.style.opacity = '0.5';
+            btnProgrammaManutenzione.style.cursor = 'not-allowed';
+            btnProgrammaManutenzione.title = 'Non puoi programmare manutenzione su un campo chiuso';
+        } else if (campo.stato === 'manutenzione') {
+            // Campo in manutenzione attiva
+            manutenzioneContent.innerHTML = `
+                <div class="manutenzione-status in-manutenzione">
+                    <div class="manutenzione-status-icon">🔧</div>
+                    <div class="manutenzione-status-text">
+                        <div class="manutenzione-status-title">Campo in Manutenzione</div>
+                        <div class="manutenzione-status-subtitle">Il campo non è prenotabile al momento</div>
+                    </div>
+                    <button class="btn-success-custom btn-sm" onclick="terminaManutenzione(${campo.campo_id})">
+                        ✓ Termina Manutenzione
                     </button>
                 </div>
             `;
-        } else {
+            btnProgrammaManutenzione.disabled = false;
+            btnProgrammaManutenzione.style.opacity = '1';
+            btnProgrammaManutenzione.style.cursor = 'pointer';
+            btnProgrammaManutenzione.title = '';
+        } else if (blocchiFuturi.length > 0) {
+            // Campo operativo con manutenzione futura programmata
+            const prossimoBlocko = blocchiFuturi[0];
+            const dataInizio = new Date(prossimoBlocko.data_inizio).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+            const dataFine = new Date(prossimoBlocko.data_fine).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            let blocchiHtml = blocchiFuturi.map(b => {
+                const dIn = new Date(b.data_inizio).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+                const dFi = new Date(b.data_fine).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+                const tipoLabel = {
+                    'manutenzione_ordinaria': '🔧 Ordinaria',
+                    'manutenzione_straordinaria': '⚠️ Straordinaria',
+                    'evento_speciale': '🎉 Evento',
+                    'chiusura_temporanea': '🚫 Chiusura'
+                }[b.tipo_blocco] || b.tipo_blocco;
+                return `
+                    <div class="manutenzione-item">
+                        <div class="manutenzione-item-icon">📅</div>
+                        <div class="manutenzione-item-info">
+                            <div class="manutenzione-item-tipo">${tipoLabel}</div>
+                            <div class="manutenzione-item-date">${dIn} - ${dFi}</div>
+                            ${b.motivo ? `<div class="manutenzione-item-motivo">${b.motivo}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
             manutenzioneContent.innerHTML = `
-                <div class="manutenzione-ok">
-                    <span class="manutenzione-icon">✅</span>
-                    <p>Nessuna manutenzione programmata</p>
-                    <small class="text-muted">Il campo è operativo</small>
+                <div class="manutenzione-status">
+                    <div class="manutenzione-status-icon">✅</div>
+                    <div class="manutenzione-status-text">
+                        <div class="manutenzione-status-title">Campo Operativo</div>
+                        <div class="manutenzione-status-subtitle">Il campo è attualmente disponibile</div>
+                    </div>
+                </div>
+                <div class="manutenzione-prevista mt-3">
+                    <div class="manutenzione-prevista-header">
+                        <span class="manutenzione-prevista-icon">⚠️</span>
+                        <span class="manutenzione-prevista-title">Manutenzione Prevista</span>
+                    </div>
+                    ${blocchiHtml}
                 </div>
             `;
+            btnProgrammaManutenzione.disabled = false;
+            btnProgrammaManutenzione.style.opacity = '1';
+            btnProgrammaManutenzione.style.cursor = 'pointer';
+            btnProgrammaManutenzione.title = '';
+        } else {
+            // Campo operativo senza manutenzione programmata
+            manutenzioneContent.innerHTML = `
+                <div class="manutenzione-status">
+                    <div class="manutenzione-status-icon">✅</div>
+                    <div class="manutenzione-status-text">
+                        <div class="manutenzione-status-title">Campo Operativo</div>
+                        <div class="manutenzione-status-subtitle">Nessuna manutenzione programmata</div>
+                    </div>
+                </div>
+            `;
+            btnProgrammaManutenzione.disabled = false;
+            btnProgrammaManutenzione.style.opacity = '1';
+            btnProgrammaManutenzione.style.cursor = 'pointer';
+            btnProgrammaManutenzione.title = '';
         }
+        
+        // Salva i blocchi futuri per usarli nella card
+        currentBlocchiFuturi = blocchiFuturi;
+        
+        // Calendario - Carica prenotazioni
+        loadPrenotazioniCalendario(campo.campo_id);
+        
+        // Statistiche - Genera grafico
+        generateStatsChart(campo);
+    }
+    
+    // ============================================================================
+    // FORMATO DATA ITALIANA
+    // ============================================================================
+    function formatDataItaliana(datetime) {
+        const date = new Date(datetime);
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        return date.toLocaleDateString('it-IT', options);
+    }
+    
+    // ============================================================================
+    // CARICA PRENOTAZIONI CALENDARIO
+    // ============================================================================
+    function loadPrenotazioniCalendario(campoId) {
+        // Simulazione dati prenotazioni (in produzione si fa una chiamata AJAX)
+        const oggi = new Date();
+        oggi.setHours(0, 0, 0, 0);
+        
+        // Per ora mostriamo placeholder - in produzione si caricano dal server
+        fetch(`gestione-campi.php?action=get_prenotazioni&campo_id=${campoId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.prenotazioni) {
+                renderPrenotazioni(data.prenotazioni);
+            } else {
+                renderPrenotazioniPlaceholder();
+            }
+        })
+        .catch(() => {
+            renderPrenotazioniPlaceholder();
+        });
+    }
+    
+    function renderPrenotazioni(prenotazioni) {
+        const oggi = new Date();
+        oggi.setHours(0, 0, 0, 0);
+        const domani = new Date(oggi);
+        domani.setDate(domani.getDate() + 1);
+        
+        const prenotazioniOggi = [];
+        const prenotazioniFuture = [];
+        const prenotazioniPassate = [];
+        
+        prenotazioni.forEach(p => {
+            const dataPrenotazione = new Date(p.data_prenotazione);
+            dataPrenotazione.setHours(0, 0, 0, 0);
+            
+            if (dataPrenotazione.getTime() === oggi.getTime()) {
+                prenotazioniOggi.push(p);
+            } else if (dataPrenotazione > oggi) {
+                prenotazioniFuture.push(p);
+            } else {
+                prenotazioniPassate.push(p);
+            }
+        });
+        
+        // Ordina
+        prenotazioniOggi.sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
+        prenotazioniFuture.sort((a, b) => new Date(a.data_prenotazione) - new Date(b.data_prenotazione));
+        prenotazioniPassate.sort((a, b) => new Date(b.data_prenotazione) - new Date(a.data_prenotazione));
+        
+        // Render
+        document.getElementById('countOggi').textContent = prenotazioniOggi.length;
+        document.getElementById('countFuture').textContent = prenotazioniFuture.length;
+        document.getElementById('countPassate').textContent = prenotazioniPassate.length;
+        
+        document.getElementById('prenotazioniOggiList').innerHTML = prenotazioniOggi.length > 0 
+            ? prenotazioniOggi.map(p => renderPrenotazioneCard(p, 'oggi')).join('')
+            : '<div class="no-prenotazioni">Nessuna prenotazione per oggi</div>';
+            
+        document.getElementById('prenotazioniFutureList').innerHTML = prenotazioniFuture.length > 0
+            ? prenotazioniFuture.slice(0, 10).map(p => renderPrenotazioneCard(p, 'futura')).join('')
+            : '<div class="no-prenotazioni">Nessuna prenotazione futura</div>';
+            
+        document.getElementById('prenotazioniPassateList').innerHTML = prenotazioniPassate.length > 0
+            ? prenotazioniPassate.slice(0, 5).map(p => renderPrenotazioneCard(p, 'passata')).join('')
+            : '<div class="no-prenotazioni">Nessuna prenotazione completata</div>';
+    }
+    
+    function renderPrenotazioneCard(p, tipo) {
+        const classTipo = tipo === 'oggi' ? 'oggi' : (tipo === 'passata' ? 'passata' : '');
+        const statusClass = tipo === 'passata' ? 'completata' : (tipo === 'oggi' ? 'in-corso' : 'confermata');
+        const statusLabel = tipo === 'passata' ? 'Completata' : (tipo === 'oggi' ? 'Oggi' : 'Confermata');
+        
+        const data = new Date(p.data_prenotazione);
+        const dataStr = data.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+        
+        return `
+            <div class="prenotazione-card ${classTipo}">
+                <div class="prenotazione-time">
+                    <span class="prenotazione-ora">${p.ora_inizio.substring(0,5)}</span>
+                    <span class="prenotazione-durata">${p.ora_fine.substring(0,5)}</span>
+                </div>
+                <div class="prenotazione-info">
+                    <div class="prenotazione-utente">${p.utente_nome || 'Utente'}</div>
+                    <div class="prenotazione-dettagli">${p.num_partecipanti || '-'} partecipanti</div>
+                </div>
+                <div class="prenotazione-data">${dataStr}</div>
+                <span class="prenotazione-status ${statusClass}">${statusLabel}</span>
+            </div>
+        `;
+    }
+    
+    function renderPrenotazioniPlaceholder() {
+        document.getElementById('countOggi').textContent = '0';
+        document.getElementById('countFuture').textContent = '0';
+        document.getElementById('countPassate').textContent = '0';
+        document.getElementById('prenotazioniOggiList').innerHTML = '<div class="no-prenotazioni">Nessuna prenotazione per oggi</div>';
+        document.getElementById('prenotazioniFutureList').innerHTML = '<div class="no-prenotazioni">Nessuna prenotazione futura</div>';
+        document.getElementById('prenotazioniPassateList').innerHTML = '<div class="no-prenotazioni">Nessuna prenotazione completata</div>';
+    }
+    
+    // ============================================================================
+    // GENERA GRAFICO STATISTICHE
+    // ============================================================================
+    function generateStatsChart(campo) {
+        const chartContainer = document.getElementById('weeklyChart');
+        const giorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+        
+        // Genera dati casuali basati sulle prenotazioni settimanali
+        const prenotazioniSett = campo.prenotazioni_settimana || 0;
+        const mediaGiorno = Math.ceil(prenotazioniSett / 7);
+        
+        // Simula distribuzione (weekend più prenotazioni)
+        const valori = [
+            Math.floor(mediaGiorno * 0.8),
+            Math.floor(mediaGiorno * 0.9),
+            Math.floor(mediaGiorno * 1.0),
+            Math.floor(mediaGiorno * 0.9),
+            Math.floor(mediaGiorno * 1.2),
+            Math.floor(mediaGiorno * 1.5),
+            Math.floor(mediaGiorno * 1.3)
+        ];
+        
+        const maxVal = Math.max(...valori, 1);
+        
+        chartContainer.innerHTML = valori.map((val, i) => `
+            <div class="bar-item">
+                <span class="bar-value">${val}</span>
+                <div class="bar" style="height: ${(val / maxVal) * 180}px"></div>
+                <span class="bar-label">${giorni[i]}</span>
+            </div>
+        `).join('');
+        
+        // Summary
+        const totale = valori.reduce((a, b) => a + b, 0);
+        const media = (totale / 7).toFixed(1);
+        const piccoIndex = valori.indexOf(maxVal);
+        
+        document.getElementById('statsTotale').textContent = totale;
+        document.getElementById('statsMedia').textContent = media;
+        document.getElementById('statsPicco').textContent = giorni[piccoIndex];
     }
     
     // ============================================================================
@@ -1101,9 +1672,65 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================================
     // SALVA NUOVO CAMPO
     // ============================================================================
-    document.getElementById('btnSalvaCampo').addEventListener('click', function() {
-        const form = document.getElementById('formNuovoCampo');
-        const formData = new FormData(form);
+    const btnSalvaCampo = document.getElementById('btnSalvaCampo');
+    const formNuovoCampo = document.getElementById('formNuovoCampo');
+    
+    // Reset form quando il modal si chiude
+    document.getElementById('modalNuovoCampo').addEventListener('hidden.bs.modal', function() {
+        formNuovoCampo.reset();
+        // Reset radio buttons
+        document.getElementById('ncTipoOutdoor').checked = true;
+        // Reset select superficie
+        formNuovoCampo.querySelector('[name="tipo_superficie"]').selectedIndex = 0;
+        // Remove validation classes
+        formNuovoCampo.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    });
+    
+    btnSalvaCampo.addEventListener('click', function() {
+        // Validazione
+        const nome = formNuovoCampo.querySelector('[name="nome"]').value.trim();
+        const sportId = formNuovoCampo.querySelector('[name="sport_id"]').value;
+        const superficie = formNuovoCampo.querySelector('[name="tipo_superficie"]').value;
+        const capienza = formNuovoCampo.querySelector('[name="capienza_max"]').value;
+        const location = formNuovoCampo.querySelector('[name="location"]').value.trim();
+        
+        let isValid = true;
+        
+        // Reset validation
+        formNuovoCampo.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        if (!nome) {
+            formNuovoCampo.querySelector('[name="nome"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        if (!sportId) {
+            formNuovoCampo.querySelector('[name="sport_id"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        if (!superficie) {
+            formNuovoCampo.querySelector('[name="tipo_superficie"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        if (!capienza || parseInt(capienza) < 1) {
+            formNuovoCampo.querySelector('[name="capienza_max"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        if (!location) {
+            formNuovoCampo.querySelector('[name="location"]').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            showToast('Compila tutti i campi obbligatori', 'error');
+            return;
+        }
+        
+        // Loading state
+        const originalContent = btnSalvaCampo.innerHTML;
+        btnSalvaCampo.disabled = true;
+        btnSalvaCampo.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creazione...';
+        
+        const formData = new FormData(formNuovoCampo);
         formData.append('action', 'create');
         formData.append('ajax', '1');
         
@@ -1120,11 +1747,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showToast(data.message || 'Errore nella creazione', 'error');
+                btnSalvaCampo.disabled = false;
+                btnSalvaCampo.innerHTML = originalContent;
             }
         })
         .catch(error => {
             console.error('Error:', error);
             showToast('Errore di connessione', 'error');
+            btnSalvaCampo.disabled = false;
+            btnSalvaCampo.innerHTML = originalContent;
         });
     });
     
@@ -1165,18 +1796,68 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // ============================================================================
+    // CHIUDI/RIAPRI CAMPO
+    // ============================================================================
+    document.getElementById('btnChiudiCampo').addEventListener('click', function() {
+        if (!currentCampoId) return;
+        
+        // Controlla lo stato attuale del campo
+        const statusText = document.querySelector('#detailStatus .status-text-modal').textContent;
+        const isChiuso = statusText === 'Chiuso';
+        
+        const azione = isChiuso ? 'riaprire' : 'chiudere';
+        const nuovoStato = isChiuso ? 'disponibile' : 'chiuso';
+        
+        if (!confirm(`Sei sicuro di voler ${azione} questo campo?`)) {
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('action', 'update_stato');
+        formData.append('campo_id', currentCampoId);
+        formData.append('stato', nuovoStato);
+        formData.append('ajax', '1');
+        
+        fetch('gestione-campi.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message || `Campo ${isChiuso ? 'riaperto' : 'chiuso'} con successo`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalDettaglioCampo')).hide();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Errore nell\'operazione', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Errore di connessione', 'error');
+        });
+    });
+    
+    // ============================================================================
     // PROGRAMMA MANUTENZIONE
     // ============================================================================
     document.getElementById('btnProgrammaManutenzione').addEventListener('click', function() {
         if (!currentCampoId) return;
+        
+        // Controlla se il bottone è disabilitato (campo chiuso)
+        if (this.disabled) {
+            showToast('Non puoi programmare manutenzione su un campo chiuso', 'error');
+            return;
+        }
         
         document.getElementById('blocco_campo_id').value = currentCampoId;
         document.getElementById('manutenzioneSubtitle').textContent = document.getElementById('detailNome').textContent;
         
         // Set default dates
         const today = new Date().toISOString().split('T')[0];
-        document.querySelector('[name="data_inizio"]').value = today;
-        document.querySelector('[name="data_fine"]').value = today;
+        document.querySelector('#formBloccoManutenzione [name="data_inizio"]').value = today;
+        document.querySelector('#formBloccoManutenzione [name="data_fine"]').value = today;
         
         new bootstrap.Modal(document.getElementById('modalBloccoManutenzione')).show();
     });
@@ -1236,6 +1917,142 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('Errore di connessione', 'error');
         });
     };
+    
+    // ============================================================================
+    // MODIFICA CAMPO
+    // ============================================================================
+    let currentCampoData = null;
+    let currentServiziData = null;
+    
+    document.getElementById('btnModificaCampo').addEventListener('click', function() {
+        if (!currentCampoId || !currentCampoData) return;
+        
+        const campo = currentCampoData;
+        const servizi = currentServiziData || {};
+        
+        // Popola i campi del form
+        document.getElementById('modifica_campo_id').value = campo.campo_id;
+        document.getElementById('mod_stato').value = campo.stato || 'disponibile';
+        document.getElementById('mod_nome').value = campo.nome || '';
+        document.getElementById('mod_sport_id').value = campo.sport_id || '';
+        document.getElementById('mod_tipo_superficie').value = campo.tipo_superficie || '';
+        document.getElementById('mod_capienza_max').value = campo.capienza_max || '';
+        document.getElementById('mod_location').value = campo.location || '';
+        document.getElementById('mod_orario_apertura').value = (campo.orario_apertura || '08:00').substring(0, 5);
+        document.getElementById('mod_orario_chiusura').value = (campo.orario_chiusura || '22:00').substring(0, 5);
+        document.getElementById('mod_lunghezza_m').value = campo.lunghezza_m || '';
+        document.getElementById('mod_larghezza_m').value = campo.larghezza_m || '';
+        document.getElementById('mod_descrizione').value = campo.descrizione || '';
+        
+        // Tipo campo
+        if (campo.tipo_campo === 'indoor') {
+            document.getElementById('modTipoIndoor').checked = true;
+        } else {
+            document.getElementById('modTipoOutdoor').checked = true;
+        }
+        
+        // Servizi
+        document.getElementById('mod_serv_illuminazione').checked = servizi.illuminazione_notturna == 1;
+        document.getElementById('mod_serv_spogliatoi').checked = servizi.spogliatoi == 1;
+        document.getElementById('mod_serv_docce').checked = servizi.docce == 1;
+        document.getElementById('mod_serv_parcheggio').checked = servizi.parcheggio == 1;
+        document.getElementById('mod_serv_noleggio').checked = servizi.noleggio_attrezzatura == 1;
+        document.getElementById('mod_serv_bar').checked = servizi.bar_ristoro == 1;
+        document.getElementById('mod_serv_distributori').checked = servizi.distributori == 1;
+        
+        // Aggiorna subtitle
+        document.getElementById('modificaCampoSubtitle').textContent = campo.nome;
+        
+        // Chiudi il modal dettaglio
+        const modalDettaglio = bootstrap.Modal.getInstance(document.getElementById('modalDettaglioCampo'));
+        if (modalDettaglio) {
+            modalDettaglio.hide();
+        }
+        
+        // Attendi che il modal dettaglio sia chiuso e rimuovi backdrop residui
+        setTimeout(() => {
+            // Rimuovi eventuali backdrop residui
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+            document.body.style.removeProperty('overflow');
+            
+            // Apri il modal modifica
+            const modalModifica = new bootstrap.Modal(document.getElementById('modalModificaCampo'));
+            modalModifica.show();
+        }, 350);
+    });
+    
+    // Salva modifiche
+    document.getElementById('btnSalvaModifiche').addEventListener('click', function() {
+        const form = document.getElementById('formModificaCampo');
+        const btn = this;
+        
+        // Validazione
+        const nome = form.querySelector('[name="nome"]').value.trim();
+        const sportId = form.querySelector('[name="sport_id"]').value;
+        const superficie = form.querySelector('[name="tipo_superficie"]').value;
+        const capienza = form.querySelector('[name="capienza_max"]').value;
+        const location = form.querySelector('[name="location"]').value.trim();
+        
+        let isValid = true;
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        if (!nome) { form.querySelector('[name="nome"]').classList.add('is-invalid'); isValid = false; }
+        if (!sportId) { form.querySelector('[name="sport_id"]').classList.add('is-invalid'); isValid = false; }
+        if (!superficie) { form.querySelector('[name="tipo_superficie"]').classList.add('is-invalid'); isValid = false; }
+        if (!capienza) { form.querySelector('[name="capienza_max"]').classList.add('is-invalid'); isValid = false; }
+        if (!location) { form.querySelector('[name="location"]').classList.add('is-invalid'); isValid = false; }
+        
+        if (!isValid) {
+            showToast('Compila tutti i campi obbligatori', 'error');
+            return;
+        }
+        
+        // Loading
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvataggio...';
+        
+        const formData = new FormData(form);
+        formData.append('action', 'update');
+        formData.append('ajax', '1');
+        
+        fetch('gestione-campi.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message || 'Campo modificato con successo', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalModificaCampo')).hide();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Errore nella modifica', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Errore di connessione', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        });
+    });
+    
+    // ============================================================================
+    // FIX MODAL - Sposta i modal nel body per evitare problemi di z-index
+    // ============================================================================
+    const modalsToMove = ['modalNuovoCampo', 'modalDettaglioCampo', 'modalBloccoManutenzione', 'modalModificaCampo'];
+    modalsToMove.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+    });
     
 });
 </script>

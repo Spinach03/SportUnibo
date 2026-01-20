@@ -122,6 +122,31 @@ if ($isAjax || isset($_POST['ajax'])) {
             exit;
             
         // ============================================
+        // AGGIORNA STATO CAMPO (Chiudi/Riapri)
+        // ============================================
+        case 'update_stato':
+            $campoId = intval($_POST['campo_id'] ?? 0);
+            $nuovoStato = $_POST['stato'] ?? '';
+            
+            $statiValidi = ['disponibile', 'manutenzione', 'chiuso'];
+            
+            if ($campoId && in_array($nuovoStato, $statiValidi)) {
+                if ($dbh->updateStatoCampo($campoId, $nuovoStato)) {
+                    $messaggi = [
+                        'disponibile' => 'Campo riaperto con successo',
+                        'manutenzione' => 'Campo messo in manutenzione',
+                        'chiuso' => 'Campo chiuso con successo'
+                    ];
+                    echo json_encode(['success' => true, 'message' => $messaggi[$nuovoStato]]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Errore durante l\'aggiornamento dello stato']);
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Dati non validi']);
+            }
+            exit;
+            
+        // ============================================
         // DETTAGLIO CAMPO
         // ============================================
         case 'get_campo':
@@ -133,8 +158,9 @@ if ($isAjax || isset($_POST['ajax'])) {
                 $foto = $dbh->getCampoFoto($campoId);
                 $storico = $dbh->getCampoStorico($campoId);
                 $stats = $dbh->getStatisticheCampo($campoId);
-                $recensioni = $dbh->getRecensioniCampo($campoId, 5);
+                $recensioni = $dbh->getRecensioniCampo($campoId, 100);
                 $recensioniStats = $dbh->getRecensioniStatsCampo($campoId);
+                $blocchiManutenzione = $dbh->getBlocchiManutenzione($campoId);
                 
                 echo json_encode([
                     'success' => true,
@@ -144,7 +170,8 @@ if ($isAjax || isset($_POST['ajax'])) {
                     'storico' => $storico,
                     'stats' => $stats,
                     'recensioni' => $recensioni,
-                    'recensioni_stats' => $recensioniStats
+                    'recensioni_stats' => $recensioniStats,
+                    'blocchi_manutenzione' => $blocchiManutenzione
                 ]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'ID campo non valido']);
@@ -310,7 +337,7 @@ $blocchiAttivi = $dbh->getBlocchiManutenzione();
 $templateParams["titolo"] = "Campus Sports - Gestione Campi";
 $templateParams["titolo_pagina"] = "Gestione Campi";
 $templateParams["nome"] = "gestione-campi.php";
-$templateParams["css_extra"] = ["css/gestione-campi.css"];
+$templateParams["css_extra"] = ["css/gestione-campi.css", "css/modal-nuovo-campo.css", "css/modal-dettaglio-campo.css"];
 
 $templateParams["stats"] = $campiStats;
 $templateParams["campi"] = $campi;

@@ -250,7 +250,8 @@ class DatabaseHelper {
                     c.orario_apertura, c.orario_chiusura, c.stato, c.rating_medio, c.num_recensioni, c.created_at,
                     (SELECT COUNT(*) FROM prenotazioni p WHERE p.campo_id = c.campo_id AND p.data_prenotazione = CURDATE() AND p.stato IN ('confermata', 'completata')) as prenotazioni_oggi,
                     (SELECT COUNT(*) FROM prenotazioni p WHERE p.campo_id = c.campo_id AND p.stato IN ('confermata', 'completata')) as prenotazioni_settimana,
-                    (SELECT path_foto FROM campo_foto WHERE campo_id = c.campo_id AND is_principale = 1 LIMIT 1) as foto_principale
+                    (SELECT path_foto FROM campo_foto WHERE campo_id = c.campo_id AND is_principale = 1 LIMIT 1) as foto_principale,
+                    (SELECT COUNT(*) FROM blocchi_manutenzione bm WHERE bm.campo_id = c.campo_id AND bm.data_inizio > CURDATE()) as manutenzioni_future
                   FROM campi_sportivi c
                   JOIN sport s ON c.sport_id = s.sport_id
                   WHERE 1=1";
@@ -519,6 +520,14 @@ class DatabaseHelper {
             return true;
         }
         return false;
+    }
+    
+    // Versione semplificata senza admin logging
+    public function updateStatoCampo($campoId, $nuovoStato) {
+        $query = "UPDATE campi_sportivi SET stato = ? WHERE campo_id = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('si', $nuovoStato, $campoId);
+        return $stmt->execute();
     }
     
     // ============================================================================
@@ -912,6 +921,514 @@ class DatabaseHelper {
         $stats['metriche'] = $stmt4->get_result()->fetch_assoc();
         
         return $stats;
+    }
+
+    // ============================================================================
+    // GESTIONE UTENTI - Lista completa con filtri
+    // ============================================================================
+    
+    public function getAllUsers($filtri = []) {
+        $query = "SELECT 
+                    u.user_id, u.email, u.nome, u.cognome, u.telefono, u.ruolo, u.stato, 
+                    u.ultimo_accesso, u.created_at,
+                    us.corso_laurea_id, us.anno_iscrizione, us.data_nascita, us.penalty_points, 
+                    us.xp_points, us.livello_id,
+                    cl.nome as corso_nome, cl.facolta,
+                    l.nome as livello_nome,
+                    (SELECT COUNT(*) FROM prenotazioni p WHERE p.user_id = u.user_id) as totale_prenotazioni,
+                    (SELECT COUNT(*) FROM prenotazioni p WHERE p.user_id = u.user_id AND p.stato = 'no_show') as no_show_count
+                  FROM users u
+                  LEFT JOIN utenti_standard us ON u.user_id = us.user_id
+                  LEFT JOIN corsi_laurea cl ON us.corso_laurea_id = cl.corso_id
+                  LEFT JOIN livelli l ON us.livello_id = l.livello_id
+                  WHERE 1=1";
+        
+        $params = [];
+        $types = '';
+        
+        if (!empty($filtri['ruolo'])) {
+            $query .= " AND u.ruolo = ?";
+            $params[] = $filtri['ruolo'];
+            $types .= 's';
+        }
+        
+        if (!empty($filtri['stato'])) {
+            $query .= " AND u.stato = ?";
+            $params[] = $filtri['stato'];
+            $types .= 's';
+        }
+        
+        if (!empty($filtri['corso'])) {
+            $query .= " AND us.corso_laurea_id = ?";
+            $params[] = intval($filtri['corso']);
+            $types .= 'i';
+        }
+        
+        if (!empty($filtri['penalty_min'])) {
+            $query .= " AND us.penalty_points >= ?";
+            $params[] = intval($filtri['penalty_min']);
+            $types .= 'i';
+        }
+        
+        if (!empty($filtri['search'])) {
+            $query .= " AND (u.nome LIKE ? OR u.cognome LIKE ? OR u.email LIKE ?)";
+            $searchTerm = '%' . $filtri['search'] . '%';
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $types .= 'sss';
+        }
+        
+        $orderBy = " ORDER BY ";
+        switch ($filtri['ordina'] ?? 'nome') {
+            case 'recente': $orderBy .= "u.created_at DESC"; break;
+            case 'attivita': $orderBy .= "totale_prenotazioni DESC"; break;
+            case 'penalty': $orderBy .= "us.penalty_points DESC"; break;
+            default: $orderBy .= "u.cognome ASC, u.nome ASC";
+        }
+        $query .= $orderBy;
+        
+        if (!empty($params)) {
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        } else {
+            $result = $this->db->query($query);
+        }
+        
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Statistiche generali
+    // ============================================================================
+    
+    public function getUsersStatsGenerali() {
+        $query = "SELECT 
+                    COUNT(*) as totale,
+                    SUM(CASE WHEN stato = 'attivo' THEN 1 ELSE 0 END) as attivi,
+                    SUM(CASE WHEN stato = 'sospeso' THEN 1 ELSE 0 END) as sospesi,
+                    SUM(CASE WHEN stato = 'bannato' THEN 1 ELSE 0 END) as bannati
+                  FROM users";
+        $result = $this->db->query($query);
+        return $result->fetch_assoc();
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Dettaglio singolo utente
+    // ============================================================================
+    
+    public function getUserById($userId) {
+        $query = "SELECT 
+                    u.user_id, u.email, u.nome, u.cognome, u.telefono, u.ruolo, u.stato, 
+                    u.ultimo_accesso, u.created_at,
+                    us.corso_laurea_id, us.anno_iscrizione, us.data_nascita, us.indirizzo,
+                    us.penalty_points, us.xp_points, us.livello_id,
+                    cl.nome as corso_nome, cl.facolta,
+                    l.nome as livello_nome
+                  FROM users u
+                  LEFT JOIN utenti_standard us ON u.user_id = us.user_id
+                  LEFT JOIN corsi_laurea cl ON us.corso_laurea_id = cl.corso_id
+                  LEFT JOIN livelli l ON us.livello_id = l.livello_id
+                  WHERE u.user_id = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Statistiche utente
+    // ============================================================================
+    
+    public function getUserStats($userId) {
+        $query = "SELECT 
+                    COUNT(*) as totale_prenotazioni,
+                    SUM(CASE WHEN stato = 'completata' THEN 1 ELSE 0 END) as completate,
+                    SUM(CASE WHEN stato = 'no_show' THEN 1 ELSE 0 END) as no_show,
+                    SUM(CASE WHEN stato = 'cancellata' THEN 1 ELSE 0 END) as cancellate,
+                    SUM(CASE WHEN stato = 'completata' THEN TIMESTAMPDIFF(HOUR, ora_inizio, ora_fine) ELSE 0 END) as ore_giocate
+                  FROM prenotazioni WHERE user_id = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $stats = $stmt->get_result()->fetch_assoc();
+        
+        // Tornei (se esiste la tabella)
+        $stats['tornei_partecipati'] = 0;
+        $stats['tornei_vinti'] = 0;
+        
+        return $stats;
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Corsi di laurea
+    // ============================================================================
+    
+    public function getCorsiLaurea() {
+        $query = "SELECT corso_id, nome, facolta FROM corsi_laurea WHERE attivo = 1 ORDER BY nome";
+        $result = $this->db->query($query);
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Penalty Log
+    // ============================================================================
+    
+    public function getPenaltyLog($userId, $limit = 10) {
+        $query = "SELECT pl.*, CONCAT(u.nome, ' ', u.cognome) as admin_nome
+                  FROM penalty_log pl
+                  LEFT JOIN users u ON pl.admin_id = u.user_id
+                  WHERE pl.user_id = ?
+                  ORDER BY pl.created_at DESC
+                  LIMIT ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('ii', $userId, $limit);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Segnalazioni ricevute
+    // ============================================================================
+    
+    public function getSegnalazioniRicevute($userId, $limit = 5) {
+        $query = "SELECT s.*, CONCAT(u.nome, ' ', u.cognome) as segnalante_nome
+                  FROM segnalazioni s
+                  JOIN users u ON s.user_segnalante_id = u.user_id
+                  WHERE s.user_segnalato_id = ?
+                  ORDER BY s.created_at DESC
+                  LIMIT ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('ii', $userId, $limit);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Segnalazioni fatte
+    // ============================================================================
+    
+    public function getSegnalazioniFatte($userId, $limit = 5) {
+        $query = "SELECT s.*, CONCAT(u.nome, ' ', u.cognome) as segnalato_nome
+                  FROM segnalazioni s
+                  JOIN users u ON s.user_segnalato_id = u.user_id
+                  WHERE s.user_segnalante_id = ?
+                  ORDER BY s.created_at DESC
+                  LIMIT ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('ii', $userId, $limit);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Badge utente
+    // ============================================================================
+    
+    public function getUserBadges($userId) {
+        $query = "SELECT b.*, ub.sbloccato_at
+                  FROM user_badges ub
+                  JOIN badges b ON ub.badge_id = b.badge_id
+                  WHERE ub.user_id = ?
+                  ORDER BY ub.sbloccato_at DESC";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Sanzioni utente
+    // ============================================================================
+    
+    public function getUserSanzioni($userId) {
+        $query = "SELECT s.*, CONCAT(u.nome, ' ', u.cognome) as admin_nome
+                  FROM sanzioni s
+                  JOIN users u ON s.admin_id = u.user_id
+                  WHERE s.user_id = ?
+                  ORDER BY s.created_at DESC";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Attività recenti
+    // ============================================================================
+    
+    public function getUserAttivitaRecenti($userId, $limit = 10) {
+        // Combina prenotazioni e altre attività
+        $attivita = [];
+        
+        // Prenotazioni recenti
+        $query = "SELECT 'prenotazione' as tipo, p.created_at, 
+                    CONCAT('Prenotazione ', c.nome, ' il ', DATE_FORMAT(p.data_prenotazione, '%d/%m/%Y')) as descrizione,
+                    '📅' as icona
+                  FROM prenotazioni p
+                  JOIN campi_sportivi c ON p.campo_id = c.campo_id
+                  WHERE p.user_id = ?
+                  ORDER BY p.created_at DESC LIMIT ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('ii', $userId, $limit);
+        $stmt->execute();
+        $attivita = array_merge($attivita, $stmt->get_result()->fetch_all(MYSQLI_ASSOC));
+        
+        // Ordina per data
+        usort($attivita, function($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
+        
+        return array_slice($attivita, 0, $limit);
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Modifica ruolo
+    // ============================================================================
+    
+    public function updateUserRole($userId, $nuovoRuolo, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Aggiorna ruolo in users
+            $query = "UPDATE users SET ruolo = ? WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('si', $nuovoRuolo, $userId);
+            $stmt->execute();
+            
+            if ($nuovoRuolo === 'admin') {
+                // Aggiungi a tabella admins se non esiste
+                $query2 = "INSERT IGNORE INTO admins (user_id) VALUES (?)";
+                $stmt2 = $this->db->prepare($query2);
+                $stmt2->bind_param('i', $userId);
+                $stmt2->execute();
+            } else {
+                // Rimuovi da tabella admins
+                $query2 = "DELETE FROM admins WHERE user_id = ?";
+                $stmt2 = $this->db->prepare($query2);
+                $stmt2->bind_param('i', $userId);
+                $stmt2->execute();
+            }
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Aggiungi penalty points
+    // ============================================================================
+    
+    public function addPenaltyPoints($userId, $punti, $motivo, $descrizione, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Aggiorna penalty_points
+            $query = "UPDATE utenti_standard SET penalty_points = penalty_points + ? WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('ii', $punti, $userId);
+            $stmt->execute();
+            
+            // Log
+            $query2 = "INSERT INTO penalty_log (user_id, punti, motivo, descrizione, admin_id) VALUES (?, ?, ?, ?, ?)";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('iissi', $userId, $punti, $motivo, $descrizione, $adminId);
+            $stmt2->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Rimuovi penalty points
+    // ============================================================================
+    
+    public function removePenaltyPoints($userId, $punti, $motivo, $descrizione, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Aggiorna penalty_points (non scende sotto 0)
+            $query = "UPDATE utenti_standard SET penalty_points = GREATEST(0, penalty_points - ?) WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('ii', $punti, $userId);
+            $stmt->execute();
+            
+            // Log (punti negativi per indicare rimozione)
+            $puntiNeg = -$punti;
+            $query2 = "INSERT INTO penalty_log (user_id, punti, motivo, descrizione, admin_id) VALUES (?, ?, ?, ?, ?)";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('iissi', $userId, $puntiNeg, $motivo, $descrizione, $adminId);
+            $stmt2->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Reset penalty points
+    // ============================================================================
+    
+    public function resetPenaltyPoints($userId, $descrizione, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Ottieni punti attuali
+            $query = "SELECT penalty_points FROM utenti_standard WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $current = $stmt->get_result()->fetch_assoc();
+            $puntiAttuali = $current['penalty_points'] ?? 0;
+            
+            // Azzera
+            $query2 = "UPDATE utenti_standard SET penalty_points = 0 WHERE user_id = ?";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('i', $userId);
+            $stmt2->execute();
+            
+            // Log
+            $puntiNeg = -$puntiAttuali;
+            $motivo = 'reset';
+            $query3 = "INSERT INTO penalty_log (user_id, punti, motivo, descrizione, admin_id) VALUES (?, ?, ?, ?, ?)";
+            $stmt3 = $this->db->prepare($query3);
+            $stmt3->bind_param('iissi', $userId, $puntiNeg, $motivo, $descrizione, $adminId);
+            $stmt3->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Sospendi utente
+    // ============================================================================
+    
+    public function suspendUser($userId, $giorni, $motivo, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Aggiorna stato
+            $query = "UPDATE users SET stato = 'sospeso' WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            
+            // Crea sanzione
+            $dataInizio = date('Y-m-d H:i:s');
+            $dataFine = date('Y-m-d H:i:s', strtotime("+{$giorni} days"));
+            $tipo = 'sospensione';
+            
+            $query2 = "INSERT INTO sanzioni (user_id, tipo, motivo, data_inizio, data_fine, admin_id, attiva) 
+                       VALUES (?, ?, ?, ?, ?, ?, 1)";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('issssi', $userId, $tipo, $motivo, $dataInizio, $dataFine, $adminId);
+            $stmt2->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Riabilita utente
+    // ============================================================================
+    
+    public function reactivateUser($userId, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Aggiorna stato
+            $query = "UPDATE users SET stato = 'attivo' WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            
+            // Disattiva sanzioni attive
+            $query2 = "UPDATE sanzioni SET attiva = 0 WHERE user_id = ? AND attiva = 1";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('i', $userId);
+            $stmt2->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Ban utente
+    // ============================================================================
+    
+    public function banUser($userId, $motivo, $adminId) {
+        $this->db->begin_transaction();
+        
+        try {
+            // Aggiorna stato
+            $query = "UPDATE users SET stato = 'bannato' WHERE user_id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            
+            // Crea sanzione ban (permanente, senza data_fine)
+            $dataInizio = date('Y-m-d H:i:s');
+            $tipo = 'ban';
+            
+            $query2 = "INSERT INTO sanzioni (user_id, tipo, motivo, data_inizio, data_fine, admin_id, attiva) 
+                       VALUES (?, ?, ?, ?, NULL, ?, 1)";
+            $stmt2 = $this->db->prepare($query2);
+            $stmt2->bind_param('isssi', $userId, $tipo, $motivo, $dataInizio, $adminId);
+            $stmt2->execute();
+            
+            // Cancella prenotazioni future
+            $query3 = "UPDATE prenotazioni SET stato = 'cancellata' 
+                       WHERE user_id = ? AND data_prenotazione >= CURDATE() AND stato IN ('confermata', 'pending')";
+            $stmt3 = $this->db->prepare($query3);
+            $stmt3->bind_param('i', $userId);
+            $stmt3->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
+    
+    // ============================================================================
+    // GESTIONE UTENTI - Invia messaggio
+    // ============================================================================
+    
+    public function sendUserMessage($userId, $oggetto, $messaggio, $tipo, $adminId) {
+        // Per ora salviamo come notifica nel sistema
+        // In futuro si può integrare con sistema email
+        
+        $query = "INSERT INTO notifiche (user_id, tipo, titolo, messaggio, created_at) 
+                  VALUES (?, 'admin_message', ?, ?, NOW())";
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param('iss', $userId, $oggetto, $messaggio);
+        
+        return $stmt->execute();
     }
 
 }
